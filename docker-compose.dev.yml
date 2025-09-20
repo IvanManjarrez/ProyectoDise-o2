@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: artgallery-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: artgallery
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/common/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - artgallery-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: artgallery-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass password123
+    volumes:
+      - redis_data:/data
+    networks:
+      - artgallery-network
+
+  # Composition Service (Main API)
+  composition-service:
+    build: 
+      context: ./backend/composition-service
+      dockerfile: Dockerfile
+    container_name: composition-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/artgallery?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password123
+      - PROXY_SERVICE_URL=http://proxy-service:3002
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend/composition-service/src:/app/src
+      - /app/node_modules
+    networks:
+      - artgallery-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Proxy Service (API Gateway/Cache)
+  proxy-service:
+    build: 
+      context: ./backend/proxy-service
+      dockerfile: Dockerfile
+    container_name: proxy-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password123
+      # External APIs (for future use)
+      - LOUVRE_API_URL=https://api.louvre.fr
+      - MET_API_URL=https://collectionapi.metmuseum.org/public/collection/v1
+      - PRADO_API_URL=https://api.museodelprado.es
+    depends_on:
+      - redis
+    volumes:
+      - ./backend/proxy-service/src:/app/src
+      - /app/node_modules
+    networks:
+      - artgallery-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  artgallery-network:
+    driver: bridge
