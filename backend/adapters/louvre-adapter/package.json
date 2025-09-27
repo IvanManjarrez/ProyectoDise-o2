@@ -1,13 +1,12 @@
 {
-  "name": "composition-service",
+  "name": "louvre-adapter",
   "version": "1.0.0",
-  "description": "Main composition orchestrator for AR Art Gallery",
+  "description": "Louvre Museum API adapter",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main"
   },
   "dependencies": {},

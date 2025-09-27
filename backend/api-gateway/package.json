@@ -1,7 +1,7 @@
 {
-  "name": "composition-service",
+  "name": "api-gateway",
   "version": "1.0.0",
-  "description": "Main composition orchestrator for AR Art Gallery",
+  "description": "API Gateway for AR Art Gallery",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",

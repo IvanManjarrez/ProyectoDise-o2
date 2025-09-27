@@ -1,0 +1,1 @@
+// TODO: Implementar adapter para Louvre API
