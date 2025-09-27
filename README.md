@@ -1,189 +1,195 @@
-# ProyectoDiseño2 - Galería de Arte Virtual
+# Galería de Arte Virtual - MVP
 
-**Primera Entrega:** Estructura de proyecto inicial, esqueleto de servicios y docker-compose.dev con DB.
+Proyecto que permitirá explorar obras de arte de museos famosos. Sistema distribuido con API Composition Pattern y Proxy Pattern.
 
-## 🏗️ Arquitectura del Sistema
+## Arquitectura de Microservicios
+
+### Backend Services (Puertos de Desarrollo)
+- **API Gateway** (3000) - Punto de entrada único, rate limiting, CORS
+- **Auth Service** (3004) - Autenticación JWT, gestión de usuarios estudiantes  
+- **Composition Service** (3001) - Orquestador principal, búsqueda unificada
+- **Museum Proxy Service** (3010) - Proxy con circuit breaker para APIs externas
+- **Louvre Adapter** (3011) - Integración específica con API del Louvre
+- **MET Adapter** (3012) - Integración específica con API del Metropolitan Museum
+
+### Infraestructura
+- **MongoDB** (27017) - Base de datos principal
+- **Redis** (6379) - Cache distribuido y sesiones
+- **Nginx** - Load balancer y reverse proxy
+
+## Estructura del Proyecto
+
+### General
 
 ```
-ProyectoDiseño2/
-├── backend/
-│   ├── composition-service/           # 🎯 Servicio Principal (NestJS)
-│   │   ├── src/
-│   │   │   ├── main.ts               # Bootstrap de NestJS
-│   │   │   ├── app.module.ts         # Módulo raíz
-│   │   │   └── modules/
-│   │   │       ├── composition/      # API Composition & Orchestration
-│   │   │       ├── core/             # Domain Models (User, Artwork, Museum)
-│   │   │       └── connectors/       # External API Adapters
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   └── Dockerfile
-│   │
-│   ├── proxy-service/                # 🚀 Proxy & Cache (NestJS)
-│   │   ├── src/
-│   │   │   ├── main.ts               # Bootstrap
-│   │   │   ├── app.module.ts         # Módulo con cache y throttling
-│   │   │   ├── proxy.controller.ts   # API Gateway endpoints
-│   │   │   └── proxy.service.ts      # Cache, Circuit Breaker, Retries
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   └── Dockerfile
-│   │
-│   └── common/                       # 📚 Shared Resources
-│       └── init-mongo.js             # MongoDB initialization script
-│
-├── docker-compose.dev.yml            # 🐳 Complete Development Stack
-└── README.md
+backend/
+├── api-gateway/              # Puerto 3000
+├── auth-service/             # Puerto 3004
+├── composition-service/      # Puerto 3001
+├── museum-proxy-service/     # Puerto 3010
+├── adapters/
+│   ├── louvre-adapter/       # Puerto 3011
+│   └── met-adapter/          # Puerto 3012
+└── shared/
+    ├── common/               # DTOs compartidos
+    └── database/             # Configuración DB
+
+infrastructure/
+├── docker-compose.dev.yml
+└── nginx/
+```
+### Por Microservicios:
+- Auth Service: 
+```
+src/core/
+├── domain/
+│   ├── entities/
+│   │   ├── user.entity.ts         
+│   │   └── session.entity.ts   
+│   ├── repositories/
+│   │   └── user.repository.ts 
+│   └── value-objects/
+│       ├── email.vo.ts         
+│       └── password.vo.ts  
+├── application/
+│   ├── usecases/
+│   │   ├── login.usecase.ts    
+│   │   └── register.usecase.ts 
+│   ├── dto/
+│   │   └── auth.dto.ts   
+│   └── ports/
+│       └── jwt.port.ts  
+└── infrastructure/ (carpetas creadas)
 ```
 
-## 🛠️ Stack Tecnológico
+- API Gateway:
+```
+src/core/
+├── domain/
+│   └── entities/
+│       ├── route.entity.ts  
+│       └── rate-limit.entity.ts  
+├── application/
+│   ├── usecases/
+│   │   ├── route-request.usecase.ts 
+│   │   └── validate-rate-limit.usecase.ts 
+│   └── dto/
+│       └── gateway.dto.ts 
+└── interface/
+    └── controllers/
+        └── gateway.controller.ts 
+```
 
-- **Backend Framework:** Node.js + NestJS + TypeScript
-- **Base de Datos:** MongoDB 7.0
-- **Cache:** Redis 7.0 (con password)
-- **Containerización:** Docker + Docker Compose
-- **API Design:** REST + Circuit Breaker + Rate Limiting
+- Louvre Adapter
+```
+src/core/
+├── domain/
+│   ├── entities/
+│   │   └── louvre-artwork.entity.ts 
+│   └── repositories/
+│       └── louvre-api.repository.ts 
+├── application/
+│   ├── usecases/
+│   │   └── search-louvre-artworks.usecase.ts 
+│   └── dto/
+│       └── louvre-api.dto.ts    
+├── infrastructure/
+│   └── external/
+│       └── louvre-http.client.ts  
+└── interface/
+    └── controllers/
+        └── louvre.controller.ts 
+```
 
-## 🚀 Servicios Implementados
+- MET Adapter:
+```
+src/core/
+├── domain/
+│   └── entities/
+│       └── met-artwork.entity.ts 
+├── application/
+│   └── usecases/
+│       └── search-met-artworks.usecase.ts 
+└── interface/
+    └── controllers/
+        └── met.controller.ts 
+```
 
-### 1. **Composition Service** (Puerto 3001)
-- **Función:** API principal y orquestador de datos
-- **Módulos:**
-  - `Core`: Schemas de dominio (User, Artwork, Museum, Favorite, ViewLog)
-  - `Composition`: Controllers y servicios de búsqueda
-  - `Connectors`: Preparado para adaptadores externos
-- **Features:**
-  - MongoDB con Mongoose
-  - Cache con Redis
-  - Rate limiting
-  - Validación de datos
+- Museum Proxy Service:
+```
+src/core/
+├── domain/
+│   ├── entities/
+│   │   ├── user.entity.ts    
+│   │   └── session.entity.ts  
+│   ├── repositories/
+│   │   └── user.repository.ts
+│   └── value-objects/
+│       ├── email.vo.ts     
+│       └── password.vo.ts    
+├── application/
+│   ├── usecases/
+│   │   ├── login.usecase.ts   
+│   │   └── register.usecase.ts  
+│   ├── dto/
+│   │   └── auth.dto.ts    
+│   └── ports/
+│       └── jwt.port.ts   
+└── infrastructure/ (carpetas creadas)
+```
 
-### 2. **Proxy Service** (Puerto 3002)
-- **Función:** Gateway y proxy para APIs externas
-- **Features:**
-  - Circuit Breaker pattern
-  - Retry con backoff exponencial
-  - Cache distribuido
-  - Rate limiting por cliente
-  - Health checks
+- Composition Service:
+```
+src/core/
+├── domain/
+│   └── entities/
+│       ├── route.entity.ts 
+│       └── rate-limit.entity.ts   
+├── application/
+│   ├── usecases/
+│   │   ├── route-request.usecase.ts  
+│   │   └── validate-rate-limit.usecase.ts 
+│   └── dto/
+│       └── gateway.dto.ts   
+└── interface/
+    └── controllers/
+        └── gateway.controller.ts 
+```
 
-### 3. **Base de Datos**
-- **MongoDB**: Persistencia principal con datos de ejemplo
-- **Redis**: Cache y sesiones
-
-## 📊 Datos de Ejemplo
-
-El sistema viene pre-cargado con:
-- **3 Museos**: Louvre, MET, Prado
-- **5 Obras de Arte**: Mona Lisa, Starry Night, Las Meninas, etc.
-- **Colecciones** listas para búsqueda
-
-## 🔧 Instrucciones de Instalación
+## Desarrollo
 
 ### Prerrequisitos
-- Docker Desktop
+- Node.js 18+
+- Docker & Docker Compose
 - Git
 
-### 1. Clonar el Repositorio
+### Desarrollo Local
+
+1. **Levantar infraestructura:**
 ```bash
-git clone <repo-url>
-cd ProyectoDiseño2
+cd infrastructure
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-### 2. Levantar el Stack Completo
+2. **Instalar dependencias y ejecutar servicios:**
 ```bash
-# Construir y levantar todos los servicios
-docker-compose -f docker-compose.dev.yml up --build
-
-# En modo detached (background)
-docker-compose -f docker-compose.dev.yml up --build -d
+# Para cada microservicio
+cd backend/[service-name]
+npm install
+npm run start:dev
 ```
 
-### 3. Verificar que Todo Funciona
-```bash
-# Health check composition service
-curl http://localhost:3001/api/v1/health
+### URLs de Desarrollo
+- Frontend: http://localhost:5173
+- API Gateway: http://localhost:3000
+- Auth Service: http://localhost:3004
+- Composition Service: http://localhost:3001
+- Museum Proxy: http://localhost:3010
+- Louvre Adapter: http://localhost:3011
+- MET Adapter: http://localhost:3012
 
-# Health check proxy service  
-curl http://localhost:3002/api/v1/health
+## Estado de la Primera Entrega
 
-# Buscar artworks
-curl "http://localhost:3001/api/v1/search?q=mona"
-
-# Ver museos
-curl http://localhost:3001/api/v1/museums
-```
-
-### 4. Parar los Servicios
-```bash
-docker-compose -f docker-compose.dev.yml down
-```
-
-## 🌐 Endpoints Disponibles
-
-### Composition Service (3001)
-- `GET /api/v1/health` - Health check
-- `GET /api/v1/search?q={term}` - Buscar artworks
-- `GET /api/v1/artworks/{id}` - Detalle de artwork
-- `GET /api/v1/museums` - Listar museos
-
-### Proxy Service (3002)
-- `GET /api/v1/health` - Health check
-- `GET /api/v1/proxy/{provider}/search?q={term}` - Búsqueda proxy
-- `GET /api/v1/proxy/{provider}/artwork/{id}` - Artwork por proxy
-
-## 🔌 Puertos y Servicios
-
-| Servicio | Puerto | URL |
-|----------|--------|-----|
-| Composition Service | 3001 | http://localhost:3001 |
-| Proxy Service | 3002 | http://localhost:3002 |
-| MongoDB | 27017 | mongodb://admin:password123@localhost:27017 |
-| Redis | 6379 | redis://localhost:6379 (password: password123) |
-
-## 📋 Estado de la Primera Entrega
-
-### ✅ Completado
-- [x] **Estructura de proyecto inicial** - Arquitectura modular definida
-- [x] **Esqueleto de servicios** - NestJS con módulos core implementados
-- [x] **docker-compose.dev con DB** - Stack completo con MongoDB y Redis
-- [x] **Schemas de dominio** - User, Artwork, Museum, Favorite, ViewLog
-- [x] **Servicios base** - Composition y Proxy services funcionales
-- [x] **Cache distribuido** - Redis integrado con rate limiting
-- [x] **Datos de ejemplo** - Base de datos inicializada
-- [x] **Health checks** - Monitoring básico de servicios
-- [x] **Documentación** - Setup y uso completo
-
-### 🔜 Próximas Entregas
-- [ ] Integración con APIs reales de museos
-- [ ] Frontend con React + A-Frame
-- [ ] Sistema de autenticación
-- [ ] Favoritos y historial de usuario
-- [ ] Métricas y observabilidad
-
-## 🧪 Testing
-
-Para verificar que la primera entrega funciona correctamente:
-
-```bash
-# 1. Levantar el stack
-docker-compose -f docker-compose.dev.yml up --build -d
-
-# 2. Esperar unos segundos y verificar servicios
-curl http://localhost:3001/api/v1/health
-curl http://localhost:3002/api/v1/health
-
-# 3. Probar búsqueda
-curl "http://localhost:3001/api/v1/search?q=leonardo"
-
-# 4. Ver logs
-docker-compose -f docker-compose.dev.yml logs composition-service
-docker-compose -f docker-compose.dev.yml logs proxy-service
-```
-
----
-
-**Autor:** Equipo ProyectoDiseño2  
-**Entrega:** 1/3 - Estructura Base y Servicios  
-**Fecha:** Septiembre 2025
-Plataforma backend para exploración de obras de museos y experiencias AR/3D. Backend NestJS, arquitectura API Composition y Proxy, integración con MongoDB, Redis y APIs externas de museos y Sketchfab.
+- Se escogieron las arquitecturas que se usarán para el proyecto.
+- Se creó el esqueleto base del cual partirá el desarollo.
+- Se identificaron los Microservicios junto con sus funciones y responsabilidades.

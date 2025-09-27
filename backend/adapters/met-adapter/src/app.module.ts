@@ -1,0 +1,1 @@
+// TODO: Main application module for MET adapter with dependency injection
