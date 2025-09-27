@@ -19,6 +19,8 @@ Proyecto que permitirá explorar obras de arte de museos famosos. Sistema distri
 
 ## Estructura del Proyecto
 
+### General
+
 ```
 backend/
 ├── api-gateway/              # Puerto 3000
@@ -35,6 +37,123 @@ backend/
 infrastructure/
 ├── docker-compose.dev.yml
 └── nginx/
+```
+### Por Microservicios:
+- Auth Service: 
+```
+src/core/
+├── domain/
+│   ├── entities/
+│   │   ├── user.entity.ts         
+│   │   └── session.entity.ts   
+│   ├── repositories/
+│   │   └── user.repository.ts 
+│   └── value-objects/
+│       ├── email.vo.ts         
+│       └── password.vo.ts  
+├── application/
+│   ├── usecases/
+│   │   ├── login.usecase.ts    
+│   │   └── register.usecase.ts 
+│   ├── dto/
+│   │   └── auth.dto.ts   
+│   └── ports/
+│       └── jwt.port.ts  
+└── infrastructure/ (carpetas creadas)
+```
+
+- API Gateway:
+```
+src/core/
+├── domain/
+│   └── entities/
+│       ├── route.entity.ts  
+│       └── rate-limit.entity.ts  
+├── application/
+│   ├── usecases/
+│   │   ├── route-request.usecase.ts 
+│   │   └── validate-rate-limit.usecase.ts 
+│   └── dto/
+│       └── gateway.dto.ts 
+└── interface/
+    └── controllers/
+        └── gateway.controller.ts 
+```
+
+- Louvre Adapter
+```
+src/core/
+├── domain/
+│   ├── entities/
+│   │   └── louvre-artwork.entity.ts 
+│   └── repositories/
+│       └── louvre-api.repository.ts 
+├── application/
+│   ├── usecases/
+│   │   └── search-louvre-artworks.usecase.ts 
+│   └── dto/
+│       └── louvre-api.dto.ts    
+├── infrastructure/
+│   └── external/
+│       └── louvre-http.client.ts  
+└── interface/
+    └── controllers/
+        └── louvre.controller.ts 
+```
+
+- MET Adapter:
+```
+src/core/
+├── domain/
+│   └── entities/
+│       └── met-artwork.entity.ts 
+├── application/
+│   └── usecases/
+│       └── search-met-artworks.usecase.ts 
+└── interface/
+    └── controllers/
+        └── met.controller.ts 
+```
+
+- Museum Proxy Service:
+```
+src/core/
+├── domain/
+│   ├── entities/
+│   │   ├── user.entity.ts    
+│   │   └── session.entity.ts  
+│   ├── repositories/
+│   │   └── user.repository.ts
+│   └── value-objects/
+│       ├── email.vo.ts     
+│       └── password.vo.ts    
+├── application/
+│   ├── usecases/
+│   │   ├── login.usecase.ts   
+│   │   └── register.usecase.ts  
+│   ├── dto/
+│   │   └── auth.dto.ts    
+│   └── ports/
+│       └── jwt.port.ts   
+└── infrastructure/ (carpetas creadas)
+```
+
+- Composition Service:
+```
+src/core/
+├── domain/
+│   └── entities/
+│       ├── route.entity.ts 
+│       └── rate-limit.entity.ts   
+├── application/
+│   ├── usecases/
+│   │   ├── route-request.usecase.ts  
+│   │   └── validate-rate-limit.usecase.ts 
+│   └── dto/
+│       └── gateway.dto.ts   
+└── interface/
+    └── controllers/
+        └── gateway.controller.ts 
 ```
 
 ## Desarrollo
