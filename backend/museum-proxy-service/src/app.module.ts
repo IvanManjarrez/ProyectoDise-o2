@@ -1,1 +1,1 @@
-// TODO: Implementar módulo proxy de museos
+// TODO: Main application module with dependency injection configuration

@@ -1,0 +1,1 @@
+// TODO: Domain entities for Museum Proxy Service will go here
