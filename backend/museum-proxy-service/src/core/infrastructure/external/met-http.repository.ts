@@ -6,22 +6,23 @@ import { MuseumRepository } from '../../domain/repositories/museum.repository';
 
 @Injectable()
 export class MetHttpRepository implements MuseumRepository {
-  private readonly baseUrl = 'http://localhost:3012/api/v1';
+  private readonly baseUrl = 'http://localhost:3012/api/v1/met';
 
   constructor(private readonly httpService: HttpService) {}
 
   async searchArtworks(query: string, limit: number = 20): Promise<Artwork[]> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/artworks/search`, {
-          params: { query, limit },
-          timeout: 5000
+        this.httpService.get(`${this.baseUrl}/search`, {
+          params: { q: query, limit },
+          timeout: 10000
         })
       );
       
-      return response.data.map((item: any) => Artwork.fromMet(item));
+      // El MET Adapter devuelve: { artworks: MetArtworkResponseDto[], total: number, ... }
+      return response.data.artworks.map((item: any) => Artwork.fromMet(item));
     } catch (error) {
-      throw new Error(`MET API error: ${error}`);
+      throw new Error(`MET API error: ${error.message}`);
     }
   }
 

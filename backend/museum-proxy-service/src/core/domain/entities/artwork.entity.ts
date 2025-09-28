@@ -25,13 +25,13 @@ export class Artwork {
 
   static fromMet(data: any): Artwork {
     return new Artwork(
-      `met_${data.id}`,
+      `met_${data.objectID}`,
       data.title,
-      data.artist,
+      data.artistDisplayName || 'Unknown Artist',
       'met',
-      data.imageUrl,
-      data.description,
-      data.year,
+      data.primaryImage,
+      data.medium,
+      data.objectDate ? parseInt(data.objectDate) : undefined,
       data.dimensions
     );
   }
