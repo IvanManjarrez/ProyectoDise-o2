@@ -9,7 +9,7 @@ import { SearchMetArtworksUseCase } from './core/application/usecases/search-met
 import { MetHttpClient } from './core/infrastructure/external/met-http.client';
 
 // Controllers
-// import { MetController } from './interface/controllers/met.controller'; // TODO: Implementar controller
+import { MetController } from './interface/controllers/met.controller';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { MetHttpClient } from './core/infrastructure/external/met-http.client';
   
   // 🎮 Controllers - puntos de entrada REST
   controllers: [
-    // MetController, // TODO: Descomentar cuando se implemente el controller
+    MetController, // ✅ REST endpoints habilitados
   ],
   
   // 🔧 Providers - servicios y dependencias
