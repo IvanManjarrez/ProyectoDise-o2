@@ -1,1 +1,4 @@
-// TODO: Login and register DTOs
+export class RegisterDto {
+    email!: string;
+    password!: string;
+}
