@@ -1,1 +1,0 @@
-// TODO: Main application module for Louvre adapter with dependency injection

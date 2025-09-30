@@ -11,8 +11,6 @@ import { ProxyMuseumRequestUseCase } from './core/application/usecases/proxy-mus
 
 // Infrastructure - Using HTTP repositories to connect with real adapters
 import { MetHttpRepository } from './core/infrastructure/external/met-http.repository';
-import { LouvreHttpRepository } from './core/infrastructure/external/louvre-http.repository';
-import { MockLouvreRepository } from './core/infrastructure/external/mock-louvre.repository';
 import { CircuitBreakerService } from './core/infrastructure/circuit-breaker/circuit-breaker.service';
 
 @Module({
@@ -43,10 +41,6 @@ import { CircuitBreakerService } from './core/infrastructure/circuit-breaker/cir
   controllers: [ProxyController],
   providers: [
     ProxyMuseumRequestUseCase,
-    {
-      provide: 'LOUVRE_REPOSITORY',
-      useClass: LouvreHttpRepository, // HTTP repo with fallback to mock for missing adapter
-    },
     {
       provide: 'MET_REPOSITORY', 
       useClass: MetHttpRepository, // HTTP repo connected to real MET adapter

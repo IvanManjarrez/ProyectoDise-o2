@@ -12,6 +12,8 @@ export class MetHttpRepository implements MuseumRepository {
 
   async searchArtworks(query: string, limit: number = 20): Promise<Artwork[]> {
     try {
+      console.log(`🔌 Calling MET Adapter: ${this.baseUrl}/search?q=${query}&limit=${limit}`);
+      
       const response = await firstValueFrom(
         this.httpService.get(`${this.baseUrl}/search`, {
           params: { q: query, limit },
@@ -19,10 +21,13 @@ export class MetHttpRepository implements MuseumRepository {
         })
       );
       
+      console.log(`✅ MET Adapter response:`, response.data);
+      
       // El MET Adapter devuelve: { artworks: MetArtworkResponseDto[], total: number, ... }
       return response.data.artworks.map((item: any) => Artwork.fromMet(item));
     } catch (error) {
-      throw new Error(`MET API error: ${error.message}`);
+      console.error(`❌ MET Adapter error:`, error.response?.data || error.message || error);
+      throw new Error(`MET API error: ${error.response?.data || error.message || error}`);
     }
   }
 
@@ -30,7 +35,7 @@ export class MetHttpRepository implements MuseumRepository {
     try {
       const metId = id.replace('met_', '');
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/artworks/${metId}`, {
+        this.httpService.get(`${this.baseUrl}/artwork/${metId}`, {
           timeout: 5000
         })
       );

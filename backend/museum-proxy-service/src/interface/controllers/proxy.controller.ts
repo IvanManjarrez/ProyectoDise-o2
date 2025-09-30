@@ -8,10 +8,11 @@ export class ProxyController {
   @Get('artworks/search')
   async searchArtworks(
     @Query('query') query: string,
+    @Query('museum') museum: 'met',
     @Query('limit') limit: string = '20'
   ) {
     const parsedLimit = parseInt(limit, 10) || 20;
-    return await this.proxyMuseumRequestUseCase.searchArtworks(query, parsedLimit);
+    return await this.proxyMuseumRequestUseCase.searchArtworks(query, museum, parsedLimit);
   }
 
   @Get('artworks/:id')

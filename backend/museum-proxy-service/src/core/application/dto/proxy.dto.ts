@@ -7,7 +7,7 @@ export class ArtworkResponseDto {
   id: string;
   title: string;
   artist: string;
-  museum: 'louvre' | 'met';
+  museum: 'met';
   imageUrl?: string;
   description?: string;
   year?: number;
@@ -18,6 +18,6 @@ export class ProxyResponseDto<T> {
   success: boolean;
   data?: T;
   error?: string;
-  source: 'louvre' | 'met';
+  source: 'met';
   fromCache: boolean = false;
 }

@@ -10,7 +10,7 @@ export class ProxyResponseDto<T> {
   success: boolean;
   data?: T;
   error?: string;
-  source: 'louvre' | 'met';
+  source: 'met';
   fromCache: boolean = false;
 }
 
@@ -18,47 +18,53 @@ export class ProxyResponseDto<T> {
 export class ProxyMuseumRequestUseCase {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    @Inject('LOUVRE_REPOSITORY') private louvreRepository: MuseumAdapterRepository,
     @Inject('MET_REPOSITORY') private metRepository: MuseumAdapterRepository,
     @Inject('CIRCUIT_BREAKER_PORT') private circuitBreakerPort: CircuitBreakerPort,
   ) {}
 
-  async searchArtworks(query: string, limit: number = 20): Promise<{
-    louvre: ProxyResponseDto<Artwork[]>;
-    met: ProxyResponseDto<Artwork[]>;
-  }> {
-    const cacheKey = `search:${query}:${limit}`;
+  async searchArtworks(query: string, museum: 'met', limit: number = 20): Promise<ProxyResponseDto<Artwork[]>> {
+    const cacheKey = `search:${query}:${museum}:${limit}`;
     
     // Check cache first
     const cachedResult = await this.cacheManager.get(cacheKey);
     if (cachedResult) {
-      return cachedResult as any;
+      return cachedResult as ProxyResponseDto<Artwork[]>;
     }
 
-    // Execute requests in parallel with circuit breaker
-    const [louvreResult, metResult] = await Promise.allSettled([
-      this.circuitBreakerPort.executeWithBreaker('louvre', () => 
-        this.louvreRepository.searchArtworks(query, limit)
-      ),
-      this.circuitBreakerPort.executeWithBreaker('met', () => 
-        this.metRepository.searchArtworks(query, limit)
-      )
-    ]);
+    // Only MET repository supported now
+    const repository = this.metRepository;
 
-    const result = {
-      louvre: this.handleResult(louvreResult, 'louvre'),
-      met: this.handleResult(metResult, 'met')
-    };
+    try {
+      // Execute request with circuit breaker for the specific museum
+      const artworks = await this.circuitBreakerPort.executeWithBreaker(museum, () => 
+        repository.searchArtworks(query, limit)
+      );
 
-    // Cache for 10 minutes
-    await this.cacheManager.set(cacheKey, result, 600000);
+      const result: ProxyResponseDto<Artwork[]> = {
+        success: true,
+        data: artworks,
+        source: museum,
+        fromCache: false
+      };
 
-    return result;
+      // Cache for 10 minutes
+      await this.cacheManager.set(cacheKey, result, 600000);
+
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        source: museum,
+        fromCache: false
+      };
+    }
   }
 
   async getArtworkById(id: string): Promise<ProxyResponseDto<Artwork>> {
-    const museum = id.startsWith('louvre_') ? 'louvre' : 'met';
-    const repository = museum === 'louvre' ? this.louvreRepository : this.metRepository;
+    // Only MET museum supported now
+    const museum = 'met';
+    const repository = this.metRepository;
     
     const cacheKey = `artwork:${id}`;
     
@@ -96,7 +102,7 @@ export class ProxyMuseumRequestUseCase {
 
   private handleResult(
     result: PromiseSettledResult<Artwork[]>, 
-    source: 'louvre' | 'met'
+    source: 'met'
   ): ProxyResponseDto<Artwork[]> {
     if (result.status === 'fulfilled') {
       return {
