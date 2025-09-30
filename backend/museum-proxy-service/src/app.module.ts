@@ -11,6 +11,7 @@ import { ProxyMuseumRequestUseCase } from './core/application/usecases/proxy-mus
 
 // Infrastructure - Using HTTP repositories to connect with real adapters
 import { MetHttpRepository } from './core/infrastructure/external/met-http.repository';
+import { HarvardHttpRepository } from './core/infrastructure/external/harvard-http.repository';
 import { CircuitBreakerService } from './core/infrastructure/circuit-breaker/circuit-breaker.service';
 
 @Module({
@@ -44,6 +45,10 @@ import { CircuitBreakerService } from './core/infrastructure/circuit-breaker/cir
     {
       provide: 'MET_REPOSITORY', 
       useClass: MetHttpRepository, // HTTP repo connected to real MET adapter
+    },
+    {
+      provide: 'HARVARD_REPOSITORY', 
+      useClass: HarvardHttpRepository, // HTTP repo connected to real Harvard adapter
     },
     {
       provide: 'CIRCUIT_BREAKER_PORT',

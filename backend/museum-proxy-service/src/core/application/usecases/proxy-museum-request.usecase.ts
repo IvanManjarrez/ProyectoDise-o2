@@ -10,7 +10,7 @@ export class ProxyResponseDto<T> {
   success: boolean;
   data?: T;
   error?: string;
-  source: 'met';
+  source: 'met' | 'harvard';
   fromCache: boolean = false;
 }
 
@@ -19,10 +19,11 @@ export class ProxyMuseumRequestUseCase {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @Inject('MET_REPOSITORY') private metRepository: MuseumAdapterRepository,
+    @Inject('HARVARD_REPOSITORY') private harvardRepository: MuseumAdapterRepository,
     @Inject('CIRCUIT_BREAKER_PORT') private circuitBreakerPort: CircuitBreakerPort,
   ) {}
 
-  async searchArtworks(query: string, museum: 'met', limit: number = 20): Promise<ProxyResponseDto<Artwork[]>> {
+  async searchArtworks(query: string, museum: 'met' | 'harvard', limit: number = 20): Promise<ProxyResponseDto<Artwork[]>> {
     const cacheKey = `search:${query}:${museum}:${limit}`;
     
     // Check cache first
@@ -31,8 +32,8 @@ export class ProxyMuseumRequestUseCase {
       return cachedResult as ProxyResponseDto<Artwork[]>;
     }
 
-    // Only MET repository supported now
-    const repository = this.metRepository;
+    // Select repository based on museum
+    const repository = museum === 'met' ? this.metRepository : this.harvardRepository;
 
     try {
       // Execute request with circuit breaker for the specific museum
@@ -61,12 +62,11 @@ export class ProxyMuseumRequestUseCase {
     }
   }
 
-  async getArtworkById(id: string): Promise<ProxyResponseDto<Artwork>> {
-    // Only MET museum supported now
-    const museum = 'met';
-    const repository = this.metRepository;
+  async getArtworkById(id: string, museum: 'met' | 'harvard'): Promise<ProxyResponseDto<Artwork>> {
+    // Select repository based on museum
+    const repository = museum === 'met' ? this.metRepository : this.harvardRepository;
     
-    const cacheKey = `artwork:${id}`;
+    const cacheKey = `artwork:${id}:${museum}`;
     
     // Check cache first
     const cachedResult = await this.cacheManager.get(cacheKey);
@@ -102,7 +102,7 @@ export class ProxyMuseumRequestUseCase {
 
   private handleResult(
     result: PromiseSettledResult<Artwork[]>, 
-    source: 'met'
+    source: 'met' | 'harvard'
   ): ProxyResponseDto<Artwork[]> {
     if (result.status === 'fulfilled') {
       return {

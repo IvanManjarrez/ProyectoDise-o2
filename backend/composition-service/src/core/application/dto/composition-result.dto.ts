@@ -19,7 +19,7 @@ export interface ArtworkCompositionDto {
   culture?: string;
   medium?: string;
   dimensions?: string;
-  source: 'met';
+  source: 'met' | 'harvard';
   relevanceScore?: number;
 }
 

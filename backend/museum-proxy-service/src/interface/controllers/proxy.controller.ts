@@ -8,16 +8,19 @@ export class ProxyController {
   @Get('artworks/search')
   async searchArtworks(
     @Query('query') query: string,
-    @Query('museum') museum: 'met',
+    @Query('museum') museum: 'met' | 'harvard',
     @Query('limit') limit: string = '20'
   ) {
     const parsedLimit = parseInt(limit, 10) || 20;
     return await this.proxyMuseumRequestUseCase.searchArtworks(query, museum, parsedLimit);
   }
 
-  @Get('artworks/:id')
-  async getArtworkById(@Param('id') id: string) {
-    return await this.proxyMuseumRequestUseCase.getArtworkById(id);
+  @Get('artworks/:museum/:id')
+  async getArtworkById(
+    @Param('museum') museum: 'met' | 'harvard',
+    @Param('id') id: string
+  ) {
+    return await this.proxyMuseumRequestUseCase.getArtworkById(id, museum);
   }
 
   @Get('health')

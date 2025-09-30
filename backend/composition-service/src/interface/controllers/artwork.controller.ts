@@ -65,14 +65,14 @@ export class ArtworkController {
   @Get('artworks/:id')
   async getArtworkDetail(
     @Param('id') id: string,
-    @Query('museum') museum: 'met' = 'met',
+    @Query('museum') museum: 'met' | 'harvard' = 'met',
   ) {
     try {
-      if (!museum || museum !== 'met') {
+      if (!museum || (museum !== 'met' && museum !== 'harvard')) {
         throw new HttpException(
           {
             error: 'Invalid museum parameter',
-            message: 'Museum must be "met"',
+            message: 'Museum must be "met" or "harvard"',
           },
           HttpStatus.BAD_REQUEST,
         );

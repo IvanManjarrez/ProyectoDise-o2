@@ -7,7 +7,7 @@ export class ArtworkResponseDto {
   id: string;
   title: string;
   artist: string;
-  museum: 'met';
+  museum: 'met' | 'harvard';
   imageUrl?: string;
   description?: string;
   year?: number;
@@ -18,6 +18,6 @@ export class ProxyResponseDto<T> {
   success: boolean;
   data?: T;
   error?: string;
-  source: 'met';
+  source: 'met' | 'harvard';
   fromCache: boolean = false;
 }

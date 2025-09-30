@@ -5,7 +5,7 @@ export class CompositionArtwork {
     public readonly artist: string,
     public readonly imageUrl: string,
     public readonly museum: string,
-    public readonly source: 'met',
+    public readonly source: 'met' | 'harvard',
     public readonly date?: string,
     public readonly description?: string,
     public readonly culture?: string,
@@ -13,7 +13,7 @@ export class CompositionArtwork {
     public readonly dimensions?: string,
   ) {}
 
-  static fromMuseumProxy(data: any, source: 'met'): CompositionArtwork {
+  static fromMuseumProxy(data: any, source: 'met' | 'harvard'): CompositionArtwork {
     return new CompositionArtwork(
       data.id,
       data.title,

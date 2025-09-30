@@ -80,7 +80,7 @@ export class CompositionSearchUseCase {
   }
 
   private async searchMuseum(
-    museum: 'met', 
+    museum: 'met' | 'harvard', 
     searchDto: CompositionSearchDto
   ): Promise<{ museum: string; artworks: CompositionArtwork[]; responseTime: number }> {
     const startTime = Date.now();
@@ -119,7 +119,7 @@ export class CompositionSearchUseCase {
 
   private processResults(
     results: PromiseSettledResult<any>[],
-    museums: ('met')[]
+    museums: ('met' | 'harvard')[]
   ): { artworks: CompositionArtwork[]; sources: SourceResult[] } {
     const artworks: CompositionArtwork[] = [];
     const sources: SourceResult[] = [];
@@ -151,14 +151,14 @@ export class CompositionSearchUseCase {
     return { artworks, sources };
   }
 
-  private getTargetMuseums(requestedMuseums?: string[]): ('met')[] {
+  private getTargetMuseums(requestedMuseums?: string[]): ('met' | 'harvard')[] {
     if (!requestedMuseums || requestedMuseums.length === 0) {
-      return ['met']; // Por defecto, buscar solo en MET
+      return ['met', 'harvard']; // Por defecto, buscar en ambos museos
     }
 
     return requestedMuseums.filter(museum => 
-      museum === 'met'
-    ) as ('met')[];
+      museum === 'met' || museum === 'harvard'
+    ) as ('met' | 'harvard')[];
   }
 
   private generateCacheKey(searchDto: CompositionSearchDto): string {

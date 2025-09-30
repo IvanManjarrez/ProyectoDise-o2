@@ -14,7 +14,7 @@ export class MuseumProxyHttpRepository implements MuseumProxyPort {
 
   async searchArtworks(
     query: string, 
-    museum: 'met', 
+    museum: 'met' | 'harvard', 
     limit: number = 20
   ): Promise<CompositionArtwork[]> {
     try {
@@ -54,9 +54,9 @@ export class MuseumProxyHttpRepository implements MuseumProxyPort {
     }
   }
 
-  async getArtworkById(id: string, museum: 'met'): Promise<CompositionArtwork> {
+  async getArtworkById(id: string, museum: 'met' | 'harvard'): Promise<CompositionArtwork> {
     try {
-      const url = `${this.baseUrl}/api/v1/proxy/artworks/${id}?museum=${museum}`;
+      const url = `${this.baseUrl}/api/v1/proxy/artworks/${museum}/${id}`;
       
       const response = await this.fetchWithTimeout(url);
       const data = await response.json();
@@ -73,7 +73,7 @@ export class MuseumProxyHttpRepository implements MuseumProxyPort {
     }
   }
 
-  async healthCheck(museum: 'met'): Promise<boolean> {
+  async healthCheck(museum: 'met' | 'harvard'): Promise<boolean> {
     try {
       const url = `${this.baseUrl}/api/v1/proxy/health`;
       

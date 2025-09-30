@@ -6,7 +6,7 @@ import { MUSEUM_PROXY_PORT, CACHE_PORT } from '../../tokens';
 
 export interface GetArtworkDetailDto {
   id: string;
-  museum: 'met';
+  museum: 'met' | 'harvard';
 }
 
 @Injectable()
