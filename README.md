@@ -5,11 +5,10 @@ Proyecto que permitirá explorar obras de arte de museos famosos. Sistema distri
 ## Arquitectura de Microservicios
 
 ### Backend Services (Puertos de Desarrollo)
-- **API Gateway** (3000) - Punto de entrada único, rate limiting, CORS
 - **Auth Service** (3004) - Autenticación JWT, gestión de usuarios estudiantes  
 - **Composition Service** (3001) - Orquestador principal, búsqueda unificada
 - **Museum Proxy Service** (3010) - Proxy con circuit breaker para APIs externas
-- **Louvre Adapter** (3011) - Integración específica con API del Louvre
+- **Harvard Adapter** (3013) - Integración específica con API del museo de Harvard
 - **MET Adapter** (3012) - Integración específica con API del Metropolitan Museum
 
 ### Infraestructura
@@ -28,7 +27,7 @@ backend/
 ├── composition-service/      # Puerto 3001
 ├── museum-proxy-service/     # Puerto 3010
 ├── adapters/
-│   ├── louvre-adapter/       # Puerto 3011
+│   ├── harvard-adapter/      # Puerto 3013
 │   └── met-adapter/          # Puerto 3012
 └── shared/
     ├── common/               # DTOs compartidos
@@ -80,25 +79,25 @@ src/core/
         └── gateway.controller.ts 
 ```
 
-- Louvre Adapter
+- Harvard Adapter
 ```
 src/core/
 ├── domain/
 │   ├── entities/
-│   │   └── louvre-artwork.entity.ts 
+│   │   └── harvard-artwork.entity.ts 
 │   └── repositories/
-│       └── louvre-api.repository.ts 
+│       └── harvard-api.repository.ts 
 ├── application/
 │   ├── usecases/
-│   │   └── search-louvre-artworks.usecase.ts 
+│   │   └── search-harvard-artworks.usecase.ts 
 │   └── dto/
-│       └── louvre-api.dto.ts    
+│       └── harvard-api.dto.ts    
 ├── infrastructure/
 │   └── external/
-│       └── louvre-http.client.ts  
+│       └── harvard-http.client.ts  
 └── interface/
     └── controllers/
-        └── louvre.controller.ts 
+        └── harvard.controller.ts 
 ```
 
 - MET Adapter:
@@ -165,27 +164,21 @@ src/core/
 
 ### Desarrollo Local
 
-1. **Levantar infraestructura:**
-```bash
-cd infrastructure
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-2. **Instalar dependencias y ejecutar servicios:**
+1. **Instalar dependencias y ejecutar servicios:**
 ```bash
 # Para cada microservicio
 cd backend/[service-name]
 npm install
 npm run start:dev
 ```
+- Orden recomendado: (Harvard + Met Adapters) -> Museum proxy -> Composition
 
 ### URLs de Desarrollo
-- Frontend: http://localhost:5173
 - API Gateway: http://localhost:3000
 - Auth Service: http://localhost:3004
 - Composition Service: http://localhost:3001
 - Museum Proxy: http://localhost:3010
-- Louvre Adapter: http://localhost:3011
+- Harvard Adapter: http://localhost:3013
 - MET Adapter: http://localhost:3012
 
 ## Estado de la Primera Entrega
