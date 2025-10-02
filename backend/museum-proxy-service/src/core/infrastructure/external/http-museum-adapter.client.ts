@@ -1,1 +1,0 @@
-// TODO: HTTP client for museum adapters
