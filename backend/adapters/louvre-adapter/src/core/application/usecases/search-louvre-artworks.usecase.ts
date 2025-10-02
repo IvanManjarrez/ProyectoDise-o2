@@ -1,1 +1,0 @@
-// TODO: Search Louvre artworks use case

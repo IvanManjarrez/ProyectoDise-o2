@@ -1,1 +1,0 @@
-// TODO: Artwork domain entity
