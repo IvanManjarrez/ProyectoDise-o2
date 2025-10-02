@@ -1,1 +1,0 @@
-// TODO: Museum domain entity
