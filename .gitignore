@@ -58,6 +58,9 @@ typings/
 .env.test
 .env.production
 .env.local
+
+# Exception: Allow Harvard Adapter .env file (contains shared API key)
+!backend/adapters/harvard-adapter/.env
 .env.development.local
 .env.test.local
 .env.production.local
