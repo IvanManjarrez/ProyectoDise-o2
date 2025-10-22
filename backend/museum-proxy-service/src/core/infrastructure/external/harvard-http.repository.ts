@@ -6,7 +6,7 @@ import { MuseumRepository } from '../../domain/repositories/museum.repository';
 
 @Injectable()
 export class HarvardHttpRepository implements MuseumRepository {
-  private readonly baseUrl = 'http://localhost:3011/api/v1/harvard';
+  private readonly baseUrl = 'http://harvard-adapter:3013/api/v1/harvard';
 
   constructor(private readonly httpService: HttpService) {}
 

@@ -7,6 +7,14 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiQuery, 
+  ApiParam,
+  ApiResponse,
+  ApiProduces
+} from '@nestjs/swagger';
 import { SearchHarvardArtworksUseCase } from '../../core/application/usecases/search-harvard-artworks.usecase';
 import { 
   HarvardSearchResponseDTO,
@@ -18,11 +26,12 @@ import {
 } from '../../core/application/dto/harvard-search.dto';
 
 /**
- * 🎭 Harvard Art Museums Controller
+ * Harvard Art Museums Controller
  * Endpoints REST para acceso a Harvard Art Museums API
  * 
  * Base path: /api/v1/harvard
  */
+@ApiTags('harvard')
 @Controller('api/v1/harvard')
 export class HarvardController {
   private readonly logger = new Logger(HarvardController.name);
@@ -32,10 +41,55 @@ export class HarvardController {
   ) {}
 
   /**
-   * 🔍 Buscar obras de arte
+   * Buscar obras de arte
    * GET /api/v1/harvard/search?q=monet&limit=10
    */
   @Get('search')
+  @ApiOperation({ 
+    summary: 'Buscar obras de arte',
+    description: `
+      Permite buscar obras de arte en la colección del Harvard Art Museums.
+      
+      **Ejemplos de búsqueda:**
+      - \`monet\` - Busca obras de Claude Monet
+      - \`paintings\` - Busca pinturas
+      - \`impressionist\` - Busca arte impresionista
+      - \`portrait\` - Busca retratos
+      
+      **Características:**
+      - Búsqueda full-text en título, artista y descripción
+      - Resultados ordenados por relevancia
+      - Incluye imágenes cuando están disponibles
+      - Respuesta optimizada para AR Gallery
+    `
+  })
+  @ApiQuery({ 
+    name: 'q', 
+    description: 'Término de búsqueda (artista, obra, estilo, etc.)',
+    example: 'monet',
+    required: true
+  })
+  @ApiQuery({ 
+    name: 'limit', 
+    description: 'Número máximo de resultados a devolver',
+    example: '10',
+    required: false,
+    type: 'string'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Lista de obras de arte encontradas',
+    type: HarvardSearchResponseDTO
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Parámetros de búsqueda inválidos' 
+  })
+  @ApiResponse({ 
+    status: 500, 
+    description: 'Error interno del servidor' 
+  })
+  @ApiProduces('application/json')
   async searchArtworks(
     @Query('q') q: string,
     @Query('limit') limit?: string
@@ -98,11 +152,11 @@ export class HarvardController {
         limit: numLimit,
       });
 
-      this.logger.log(`✅ Search completed: ${artworksDTO.length} artworks returned`);
+      this.logger.log(`Search completed: ${artworksDTO.length} artworks returned`);
       return response;
 
     } catch (error) {
-      this.logger.error(`❌ Search failed:`, error.message);
+      this.logger.error(`Search failed:`, error.message);
       
       if (error instanceof HttpException) {
         throw error;
@@ -116,13 +170,13 @@ export class HarvardController {
   }
 
   /**
-   * 🎨 Obtener obra específica por ID
+   * Obtener obra específica por ID
    * GET /api/v1/harvard/artwork/123456
    */
   @Get('artwork/:id')
   async getArtworkById(@Param('id') id: string): Promise<HarvardArtworkResponseDTO> {
     try {
-      this.logger.log(`🎨 Fetching artwork with ID: ${id}`);
+      this.logger.log(` Fetching artwork with ID: ${id}`);
 
       // Validar ID
       if (!id || isNaN(parseInt(id))) {
@@ -166,11 +220,11 @@ export class HarvardController {
         hasImage: artwork.hasImage(),
       });
 
-      this.logger.log(`✅ Artwork retrieved: "${artwork.title}"`);
+      this.logger.log(` Artwork retrieved: "${artwork.title}"`);
       return response;
 
     } catch (error) {
-      this.logger.error(`❌ Failed to fetch artwork ${id}:`, error.message);
+      this.logger.error(` Failed to fetch artwork ${id}:`, error.message);
       
       if (error instanceof HttpException) {
         throw error;
@@ -184,22 +238,22 @@ export class HarvardController {
   }
 
   /**
-   * 🏛️ Obtener divisiones disponibles
+   * Obtener divisiones disponibles
    * GET /api/v1/harvard/divisions
    */
   @Get('divisions')
   async getDivisions(): Promise<HarvardDivisionDTO[]> {
     try {
-      this.logger.log('🏛️ Fetching Harvard divisions');
+      this.logger.log(' Fetching Harvard divisions');
 
       const divisions = await this.searchHarvardArtworksUseCase.getDivisions();
       const response = divisions.map(div => new HarvardDivisionDTO(div.divisionId, div.name));
 
-      this.logger.log(`✅ Retrieved ${response.length} divisions`);
+      this.logger.log(` Retrieved ${response.length} divisions`);
       return response;
 
     } catch (error) {
-      this.logger.error('❌ Failed to fetch divisions:', error.message);
+      this.logger.error(' Failed to fetch divisions:', error.message);
       throw new HttpException(
         `Failed to fetch divisions: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -208,22 +262,22 @@ export class HarvardController {
   }
 
   /**
-   * 🎭 Obtener clasificaciones disponibles
+   * Obtener clasificaciones disponibles
    * GET /api/v1/harvard/classifications
    */
   @Get('classifications')
   async getClassifications(): Promise<HarvardClassificationDTO[]> {
     try {
-      this.logger.log('🎭 Fetching Harvard classifications');
+      this.logger.log('Fetching Harvard classifications');
 
       const classifications = await this.searchHarvardArtworksUseCase.getClassifications();
       const response = classifications.map(cls => new HarvardClassificationDTO(cls.classificationId, cls.name));
 
-      this.logger.log(`✅ Retrieved ${response.length} classifications`);
+      this.logger.log(`Retrieved ${response.length} classifications`);
       return response;
 
     } catch (error) {
-      this.logger.error('❌ Failed to fetch classifications:', error.message);
+      this.logger.error('Failed to fetch classifications:', error.message);
       throw new HttpException(
         `Failed to fetch classifications: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -232,22 +286,22 @@ export class HarvardController {
   }
 
   /**
-   * 🌍 Obtener culturas disponibles
+   * Obtener culturas disponibles
    * GET /api/v1/harvard/cultures
    */
   @Get('cultures')
   async getCultures(): Promise<HarvardCultureDTO[]> {
     try {
-      this.logger.log('🌍 Fetching Harvard cultures');
+      this.logger.log('Fetching Harvard cultures');
 
       const cultures = await this.searchHarvardArtworksUseCase.getCultures();
       const response = cultures.map(culture => new HarvardCultureDTO(culture.cultureId, culture.name));
 
-      this.logger.log(`✅ Retrieved ${response.length} cultures`);
+      this.logger.log(`Retrieved ${response.length} cultures`);
       return response;
 
     } catch (error) {
-      this.logger.error('❌ Failed to fetch cultures:', error.message);
+      this.logger.error('Failed to fetch cultures:', error.message);
       throw new HttpException(
         `Failed to fetch cultures: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -256,25 +310,52 @@ export class HarvardController {
   }
 
   /**
-   * ⚡ Health Check del servicio
+   * Health Check del servicio
    * GET /api/v1/harvard/health
    */
   @Get('health')
+  @ApiTags('health')
+  @ApiOperation({ 
+    summary: 'Health check del servicio',
+    description: `
+      Verifica el estado de salud del adaptador Harvard y su conectividad con la API externa.
+      
+      **Qué verifica:**
+      - Conectividad con Harvard Art Museums API
+      - Tiempo de respuesta del servicio
+      - Estado general del microservicio
+      
+      **Respuesta típica:**
+      - \`healthy\`: Servicio funcionando correctamente
+      - \`unhealthy\`: Problemas de conectividad o configuración
+      - \`responseTime\`: Tiempo en millisegundos de la verificación
+    `
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Estado de salud del servicio',
+    type: HarvardHealthResponseDTO
+  })
+  @ApiResponse({ 
+    status: 500, 
+    description: 'Error al verificar estado de salud' 
+  })
+  @ApiProduces('application/json')
   async healthCheck(): Promise<HarvardHealthResponseDTO> {
     try {
       const startTime = Date.now();
-      this.logger.log('⚡ Performing health check');
+      this.logger.log('Performing health check');
 
       const isHealthy = await this.searchHarvardArtworksUseCase.checkHealth();
       const responseTime = Date.now() - startTime;
 
       const response = new HarvardHealthResponseDTO(isHealthy, responseTime);
 
-      this.logger.log(`💚 Health check completed: ${response.status} (${responseTime}ms)`);
+      this.logger.log(`Health check completed: ${response.status} (${responseTime}ms)`);
       return response;
 
     } catch (error) {
-      this.logger.error('❌ Health check failed:', error.message);
+      this.logger.error('Health check failed:', error.message);
       
       const response = new HarvardHealthResponseDTO(false);
       return response;

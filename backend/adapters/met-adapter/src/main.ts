@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { SearchMetArtworksUseCase } from './core/application/usecases/search-met-artworks.usecase';
 
@@ -38,12 +39,29 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization'],
     });
     
+    // CONFIGURACIÓN DE SWAGGER/OPENAPI
+    logger.log('# Configurando documentación OpenAPI...');
+    
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Metropolitan Museum of Art API')
+      .setDescription('Adaptador para búsqueda de obras de arte del Metropolitan Museum of Art')
+      .setVersion('1.0.0')
+      .addTag('met', 'Endpoints del Metropolitan Museum')
+      .addTag('health', 'Endpoints de monitoreo y salud')
+      .build();
+    
+    const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, swaggerDocument);
+    
+    logger.log('# Swagger configurado en /api/docs');
+
     // Iniciar servidor
     await app.listen(port);
     
     logger.log(`# MET Adapter running on port ${port}`);
     logger.log(`# Environment: ${nodeEnv}`);
     logger.log(`# MET API URL: ${configService.get('MET_API_BASE_URL')}`);
+    logger.log(`# API Documentation: http://localhost:${port}/api/docs`);
     logger.log(`# Available endpoints:`);
     logger.log(`  GET /api/v1/met/health`);
     logger.log(`  GET /api/v1/met/search?q=monet&limit=10`);
@@ -57,7 +75,7 @@ async function bootstrap() {
 }
 
 /**
- * 🧪 WIRING TEST - Para verificar que todo funciona
+ * WIRING TEST - Para verificar que todo funciona
  * Descomenta esta función y comenta bootstrap() para probar
  */
 /*
