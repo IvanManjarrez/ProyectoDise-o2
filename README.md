@@ -158,11 +158,117 @@ src/core/
 ## Desarrollo
 
 ### Prerrequisitos
-- Node.js 18+
 - Docker & Docker Compose
+- Node.js 18+ (para desarrollo individual)
 - Git
 
-### Desarrollo Local
+## Ejecución con Docker (Recomendado)
+
+### Inicio Rápido
+
+1. **Clonar el repositorio:**
+```bash
+git clone https://github.com/IvanManjarrez/ProyectoDise-o2.git
+cd ProyectoDise-o2
+```
+
+2. **Levantar todo el sistema:**
+```bash
+# Construye las imágenes y levanta todos los servicios
+docker-compose up -d
+
+# Ver el estado de los servicios
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f
+```
+
+3. **Verificar que todo funciona:**
+```bash
+# Health check de los servicios principales
+curl http://localhost:3013/api/v1/harvard/health
+curl http://localhost:3012/api/v1/met/health
+curl http://localhost:3010/api/v1/proxy/health
+
+# Búsquedas funcionales (acceso directo a adapters)
+curl "http://localhost:3013/api/v1/harvard/search?q=monet&limit=5"
+curl "http://localhost:3012/api/v1/met/search?q=monet&limit=5"
+```
+
+4. **Parar el sistema:**
+```bash
+docker-compose down
+```
+
+### URLs de Desarrollo (Docker)
+- **Composition Service**: http://localhost:3001 (Orquestador principal)
+- **Museum Proxy**: http://localhost:3010 (Proxy con circuit breaker)
+- **Harvard Adapter**: http://localhost:3013 (API Harvard Art Museums)
+- **MET Adapter**: http://localhost:3012 (API Metropolitan Museum)
+- **MongoDB**: http://localhost:27017 (Base de datos)
+- **Redis**: http://localhost:6379 (Cache)
+
+### Endpoints de Prueba
+
+#### Harvard Adapter 
+```bash
+# Búsqueda de obras de arte (Devuelve datos reales)
+GET http://localhost:3013/api/v1/harvard/search?q=monet&limit=10
+GET http://localhost:3013/api/v1/harvard/search?q=picasso&limit=5
+
+# Detalle de obra específica
+GET http://localhost:3013/api/v1/harvard/artwork/331916
+
+# Obtener clasificaciones disponibles
+GET http://localhost:3013/api/v1/harvard/classifications
+
+# Obtener culturas disponibles
+GET http://localhost:3013/api/v1/harvard/cultures
+
+# Health check del servicio
+GET http://localhost:3013/api/v1/harvard/health
+```
+
+#### MET Adapter 
+```bash
+# Búsqueda de obras de arte (Devuelve datos reales)
+GET http://localhost:3012/api/v1/met/search?q=monet&limit=10
+GET http://localhost:3012/api/v1/met/search?q=van%20gogh&limit=5
+
+# Detalle de objeto específico
+GET http://localhost:3012/api/v1/met/object/437853
+
+# Departamentos disponibles
+GET http://localhost:3012/api/v1/met/departments
+
+# Health check del servicio
+GET http://localhost:3012/api/v1/met/health
+```
+
+#### Museum Proxy Service
+```bash
+# Health check 
+GET http://localhost:3010/api/v1/proxy/health
+
+#### Composition Service
+```bash
+# Health check
+GET http://localhost:3001/api/v1/composition/health
+
+# Búsqueda unificada - Harvard
+GET http://localhost:3001/api/v1/composition/search?query=monet&museums=harvard&limit=3
+
+# Búsqueda unificada - MET
+GET http://localhost:3001/api/v1/composition/search?query=van+gogh&museums=met&limit=2
+
+# Búsqueda en múltiples museos (cuando esté implementado)
+GET http://localhost:3001/api/v1/composition/search?query=picasso&museums=harvard,met&limit=5
+```
+
+## Desarrollo Local (Sin Docker)
+
+### Configuración Manual
 
 1. **Instalar dependencias y ejecutar servicios:**
 ```bash
@@ -171,18 +277,50 @@ cd backend/[service-name]
 npm install
 npm run start:dev
 ```
-- Orden recomendado: (Harvard + Met Adapters) -> Museum proxy -> Composition
 
-### URLs de Desarrollo
-- API Gateway: http://localhost:3000
-- Auth Service: http://localhost:3004
+2. **Servicios de infraestructura:**
+```bash
+# MongoDB (puerto 27017)
+# Redis (puerto 6379)
+# Configurar manualmente o usar Docker solo para estos
+```
+
+- **Orden recomendado**: (Harvard + MET Adapters) → Museum Proxy → Composition
+
+### URLs de Desarrollo (Local)
+- Auth Service: http://localhost:3004 *(pendiente implementación)*
+- API Gateway: http://localhost:3000 *(pendiente implementación)*
 - Composition Service: http://localhost:3001
 - Museum Proxy: http://localhost:3010
 - Harvard Adapter: http://localhost:3013
 - MET Adapter: http://localhost:3012
 
-## Estado de la Primera Entrega
+## Estado del Proyecto
 
-- Se escogieron las arquitecturas que se usarán para el proyecto.
-- Se creó el esqueleto base del cual partirá el desarollo.
-- Se identificaron los Microservicios junto con sus funciones y responsabilidades.
+### Primera Entrega (Semana 1)
+- Se escogieron las arquitecturas que se usarán para el proyecto
+- Se creó el esqueleto base del cual partirá el desarrollo
+- Se identificaron los Microservicios junto con sus funciones y responsabilidades
+
+### Segunda Entrega (Semana 2)
+- **Harvard Adapter**: 100% funcional con API real de Harvard Art Museums
+- **MET Adapter**: 100% funcional con API del Metropolitan Museum
+- **Composition Service**: Orquestador principal implementado con patrón Composition
+- **Museum Proxy Service**: Proxy con Circuit Breaker para APIs externas
+
+### Tercera Entrega (Semana 3)
+- **Microservicios containerizados**: Dockerfiles optimizados para cada servicio
+- **Orquestación completa**: docker-compose.yml funcional con networking
+- **Comunicación entre servicios**: Containers conectados correctamente
+- **Base de datos**: MongoDB con persistencia de datos
+- **Cache distribuido**: Redis para optimización de rendimiento  
+- **APIs externas integradas**: Harvard y MET APIs funcionando con datos reales
+- **Validación individual**: Cada adapter probado y funcional
+
+### Objetivos Completados
+1. **Microservicios containerizados** - 4 Dockerfiles optimizados funcionando
+2. **Orquestación completa** - docker-compose.yml levanta todo el sistema
+3. **Integración con APIs externas** - Harvard y MET APIs devolviendo datos reales  
+4. **Infraestructura de datos** - MongoDB y Redis operativos con persistencia
+5. **Networking entre containers** - Comunicación interna configurada
+6. **Validación funcional** - Health checks y endpoints probados exitosamente
