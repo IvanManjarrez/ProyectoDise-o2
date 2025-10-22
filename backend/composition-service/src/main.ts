@@ -24,7 +24,7 @@ async function bootstrap() {
       credentials: true,
     });
 
-    const port = process.env.PORT || 3013;
+    const port = process.env.PORT || 3001;
     await app.listen(port);
 
     console.log(`Composition Service running on port ${port}`);
