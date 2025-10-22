@@ -1,8 +1,5 @@
-# ==========================================
-# 🐧 ETAPA 1: IMAGEN BASE
-# ==========================================
-# Usa Node.js versión 18 en Alpine Linux (versión ultra-ligera)
-# Alpine es ~5MB vs Ubuntu ~72MB = mucho más rápido
+
+#  1: IMAGEN BASE
 FROM node:18-alpine AS base
 
 # Instala dumb-init para manejar señales del sistema correctamente
@@ -10,38 +7,27 @@ FROM node:18-alpine AS base
 RUN apk add --no-cache dumb-init
 
 # Crea un usuario no-root por seguridad (principio de menor privilegio)
-# Nunca ejecutes containers como root en producción
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
-# ==========================================
-# 📦 ETAPA 2: INSTALACIÓN DE DEPENDENCIAS
-# ==========================================
+#  2: INSTALACIÓN DE DEPENDENCIAS
 FROM base AS dependencies
 
 # Establece el directorio de trabajo dentro del container
-# Todo lo que hagas después será relativo a esta carpeta
 WORKDIR /app
 
 # Copia SOLO los archivos de dependencias primero
-# Esto aprovecha el cache de Docker: si package.json no cambia,
-# Docker reutiliza esta capa y no reinstala dependencias
 COPY package*.json ./
 
 # Instala SOLO dependencias de producción
-# --ci es más rápido que npm install y usa package-lock.json exacto
-# --only=production excluye devDependencies (no las necesitas en producción)
 RUN npm ci --only=production && npm cache clean --force
 
-# ==========================================
-# 🔨 ETAPA 3: CONSTRUCCIÓN DE LA APLICACIÓN  
-# ==========================================
+#  3: CONSTRUCCIÓN DE LA APLICACIÓN
 FROM base AS build
 
 WORKDIR /app
 
 # Copia package.json para instalar TODAS las dependencias (incluyendo dev)
-# Las necesitas para compilar TypeScript
 COPY package*.json ./
 
 # Instala todas las dependencias (incluye TypeScript, @nestjs/cli, etc.)
@@ -55,9 +41,7 @@ COPY . .
 # Genera archivos JavaScript en la carpeta /dist
 RUN npm run build
 
-# ==========================================
-# 🏃 ETAPA 4: IMAGEN FINAL DE PRODUCCIÓN
-# ==========================================
+# 4: IMAGEN FINAL DE PRODUCCIÓN
 FROM base AS production
 
 WORKDIR /app
