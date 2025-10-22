@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway-ingress
+  annotations:
+    # For nginx ingress controller - adjust if using another controller
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+    - host: local.artgallery
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 3000
+
+  # Optionally add a TLS block if you configure certs for local.artgallery

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harvard-adapter
+  labels:
+    app: harvard-adapter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harvard-adapter
+  template:
+    metadata:
+      labels:
+        app: harvard-adapter
+    spec:
+      containers:
+        - name: harvard-adapter
+          image: your-docker-repo/harvard-adapter:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3011
+          envFrom:
+            - secretRef:
+                name: project-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3011
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3011
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"

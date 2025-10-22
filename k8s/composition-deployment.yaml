@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: composition-service
+  labels:
+    app: composition-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: composition-service
+  template:
+    metadata:
+      labels:
+        app: composition-service
+    spec:
+      containers:
+        - name: composition-service
+          image: your-docker-repo/composition-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3013
+          envFrom:
+            - secretRef:
+                name: project-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3013
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3013
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
