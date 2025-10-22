@@ -6,7 +6,7 @@ import { MuseumRepository } from '../../domain/repositories/museum.repository';
 
 @Injectable()
 export class MetHttpRepository implements MuseumRepository {
-  private readonly baseUrl = 'http://localhost:3012/api/v1/met';
+  private readonly baseUrl = 'http://met-adapter:3012/api/v1/met';
 
   constructor(private readonly httpService: HttpService) {}
 

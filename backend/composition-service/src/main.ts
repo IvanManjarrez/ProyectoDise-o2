@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -24,12 +25,29 @@ async function bootstrap() {
       credentials: true,
     });
 
-    const port = process.env.PORT || 3013;
+    // Configuración de Swagger/OpenAPI
+    console.log('Configurando documentación OpenAPI...');
+    
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Composition Service API')
+      .setDescription('Servicio principal de composición para AR Art Gallery - Orquesta búsquedas entre múltiples museos')
+      .setVersion('1.0.0')
+      .addTag('composition', 'Endpoints de composición y orquestación')
+      .addTag('health', 'Endpoints de monitoreo y salud')
+      .build();
+    
+    const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, swaggerDocument);
+    
+    console.log('Swagger configurado en /api/docs');
+
+    const port = process.env.PORT || 3001;
     await app.listen(port);
 
     console.log(`Composition Service running on port ${port}`);
     console.log(`Museum Proxy URL: ${process.env.MUSEUM_PROXY_URL || 'http://localhost:3010'}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`API Documentation: http://localhost:${port}/api/docs`);
     console.log(`Available endpoints:`);
     console.log(`GET http://localhost:${port}/api/v1/composition/health`);
     console.log(`GET http://localhost:${port}/api/v1/composition/search?query=monet&museums=met&limit=20`);

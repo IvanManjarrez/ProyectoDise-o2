@@ -100,7 +100,7 @@ GET /api/v1/composition/health
 
 ### Variables de entorno
 ```bash
-PORT=3013                           # Puerto del servicio
+PORT=3001                           # Puerto del servicio
 MUSEUM_PROXY_URL=http://localhost:3010  # URL del Museum Proxy Service
 CACHE_TTL=300                      # TTL del cache en segundos (5 min)
 ```
