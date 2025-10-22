@@ -16,6 +16,24 @@ Proyecto que permitirá explorar obras de arte de museos famosos. Sistema distri
 - **Redis** (6379) - Cache distribuido y sesiones
 - **Nginx** - Load balancer y reverse proxy
 
+## Documentación API (Swagger/OpenAPI)
+
+Todos los microservicios incluyen documentación interactiva completa con Swagger UI:
+
+### URLs de Documentación
+- **Harvard Adapter**: http://localhost:3013/api/docs
+- **MET Adapter**: http://localhost:3012/api/docs  
+- **Composition Service**: http://localhost:3001/api/docs
+- **Museum Proxy Service**: http://localhost:3010/api/docs
+
+### Funcionalidades Documentadas
+- **Búsqueda de obras de arte** - Endpoints de búsqueda con filtros avanzados
+- **Información detallada** - Endpoints para obtener obras específicas
+- **Metadatos de museos** - Departamentos, clasificaciones, divisiones
+- **Health checks** - Monitoreo de estado de servicios
+- **Circuit breaker** - Estados y métricas del proxy resiliente
+- **Orquestación** - Endpoints de composición multi-museo
+
 ## Estructura del Proyecto
 
 ### General
@@ -316,6 +334,8 @@ npm run start:dev
 - **Cache distribuido**: Redis para optimización de rendimiento  
 - **APIs externas integradas**: Harvard y MET APIs funcionando con datos reales
 - **Validación individual**: Cada adapter probado y funcional
+- **Documentación API completa**: Swagger/OpenAPI implementado en todos los microservicios 
+- **Documentación Swagger completa**: OpenAPI 3.0 en todos los microservicios
 
 ### Objetivos Completados
 1. **Microservicios containerizados** - 4 Dockerfiles optimizados funcionando
@@ -324,3 +344,4 @@ npm run start:dev
 4. **Infraestructura de datos** - MongoDB y Redis operativos con persistencia
 5. **Networking entre containers** - Comunicación interna configurada
 6. **Validación funcional** - Health checks y endpoints probados exitosamente
+7. **Documentación API completa** - Swagger/OpenAPI implementado en todos los microservicios
