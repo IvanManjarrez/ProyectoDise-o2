@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+
+  mongodb:
+    image: mongo:6
+    container_name: ar-mongo-local
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: artgallery
+      MONGO_INITDB_ROOT_PASSWORD: secure123
+      MONGO_INITDB_DATABASE: artgallery
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data_local:/data/db
+    networks:
+      - ar-network
+
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: ar-auth
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGO_URI=mongodb://artgallery:secure123@mongodb:27017/artgallery?authSource=admin
+      - JWT_SECRET=dev_jwt_secret
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+    networks:
+      - ar-network
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: ar-gateway
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+    networks:
+      - ar-network
+
+volumes:
+  mongo_data_local:
+
+networks:
+  ar-network:
+    driver: bridge

@@ -3,6 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Install Nest CLI globally so 'nest build' command is available in the builder
+RUN npm install -g @nestjs/cli@10
 RUN npm run build
 
 FROM node:18-alpine AS runner
