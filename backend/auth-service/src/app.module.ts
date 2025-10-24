@@ -1,5 +1,5 @@
 import { Module, Provider } from '@nestjs/common'
-// import { MongooseModule } from '@nestjs/mongoose'
+import { MongooseModule } from '@nestjs/mongoose'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { ConfigModule } from '@nestjs/config'
@@ -26,27 +26,21 @@ const imports: any[] = [
 
 const providers: Provider[] = [JwtServicePort, RegisterUseCase, LoginUseCase, JwtStrategy]
 
-// NOTE: Mongoose initialization commented out so the service will not attempt to
-// connect to a MongoDB instance during local development. The project contains a
-// `InMemoryUserRepository` which will be used instead. If you want to enable
-// MongoDB, uncomment the Mongoose import above and the block below, and provide
-// a valid MONGO_URI in the environment or .env file.
-
-// if (process.env.MONGO_URI && process.env.MONGO_URI.trim().length > 0) {
-//     imports.push(
-//         MongooseModule.forRootAsync({
-//             useFactory: async () => ({ uri: process.env.MONGO_URI }),
-//         }),
-//         MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
-//     )
-//     providers.push({ provide: 'UserRepository', useClass: MongoUserRepository })
-// } else {
-//     // Use in-memory repo (no external Mongo required)
-//     providers.push({ provide: 'UserRepository', useClass: InMemoryUserRepository })
-// }
-
-// Force in-memory repository for local development / CI runs.
-providers.push({ provide: 'UserRepository', useClass: InMemoryUserRepository })
+// If a MONGO_URI is provided in the environment, configure Mongoose and
+// use the Mongo-backed repository. Otherwise fall back to the in-memory
+// repository implementation for local development / CI.
+if (process.env.MONGO_URI && process.env.MONGO_URI.trim().length > 0) {
+	imports.push(
+		MongooseModule.forRootAsync({
+			useFactory: async () => ({ uri: process.env.MONGO_URI }),
+		}),
+		MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+	)
+	providers.push({ provide: 'UserRepository', useClass: MongoUserRepository })
+} else {
+	// Use in-memory repo (no external Mongo required)
+	providers.push({ provide: 'UserRepository', useClass: InMemoryUserRepository })
+}
 
 @Module({
 	imports,
