@@ -10,6 +10,8 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() body: AuthRegisterDto) {
+    // debug: log incoming parsed body
+    console.log('[auth] register body ->', JSON.stringify(body))
     const { email, password, name } = body
     const user = await this.registerUseCase.execute(email, password, name)
     return user

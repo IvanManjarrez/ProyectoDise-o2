@@ -27,7 +27,18 @@ export class GatewayController {
         validateStatus: () => true,
       }
 
-      const response = await axios.request(cfg)
+  // debug: log target url + headers + body (trimmed) for proxying
+  console.log('[gateway] proxy ->', url)
+  try {
+    // avoid printing huge bodies; trim to 200 chars for readability
+    const prettyData = typeof data === 'string' ? data : JSON.stringify(data)
+    const trimmed = prettyData && prettyData.length > 200 ? prettyData.slice(0, 200) + '...[truncated]' : prettyData
+    console.log('[gateway] proxy-headers ->', JSON.stringify(headers))
+    console.log('[gateway] proxy-data ->', trimmed)
+  } catch (logErr) {
+    console.log('[gateway] proxy debug error:', (logErr as any)?.message || logErr)
+  }
+  const response = await axios.request(cfg)
       res.status(response.status)
       if (response.data && typeof (response.data as any).pipe === 'function') {
         ;(response.data as any).pipe(res)

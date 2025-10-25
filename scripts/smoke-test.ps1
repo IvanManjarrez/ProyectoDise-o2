@@ -2,11 +2,12 @@
 # Usage: powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1
 
 $ErrorActionPreference = 'Stop'
-$gateway = 'http://localhost:3000'
+ # Force IPv4 address to avoid IPv6 (::1) connection issues
+$gateway = 'http://127.0.0.1:3000'
 
 try {
-    Write-Host "Waiting 2s for services to initialize..."
-    Start-Sleep -Seconds 2
+    Write-Host "Waiting 5s for services to initialize..."
+    Start-Sleep -Seconds 5
 
     Write-Host "-> Registering user"
     $registerBody = @{ email = 'smoke@example.com'; password = 'P@ssw0rd123!'; name = 'Smoke Tester' } | ConvertTo-Json
