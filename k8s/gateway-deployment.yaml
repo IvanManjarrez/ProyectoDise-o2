@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: your-docker-repo/api-gateway:latest
+          image: proyectodise-o2-api-gateway:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -26,6 +26,8 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service:3001"
           livenessProbe:
             httpGet:
               path: /health

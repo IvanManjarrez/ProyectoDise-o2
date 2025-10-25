@@ -6,12 +6,17 @@ import { Request, Response } from 'express'
 export class GatewayController {
   private async proxy(req: Request, res: Response) {
     try {
-      const url = `http://localhost:3001${req.url}`
-      const headers = { ...req.headers }
-      // remove host header to avoid mismatch
-      delete (headers as any).host
-      const method = req.method.toLowerCase()
-      const data = req.body
+  const base = process.env.AUTH_SERVICE_URL || 'http://localhost:3001'
+  const url = `${base}${req.url}`
+  const headers = { ...req.headers }
+  // remove host header to avoid mismatch
+  delete (headers as any).host
+  // let axios compute content-length; remove incoming content-length if present
+  delete (headers as any)['content-length']
+  const method = req.method.toLowerCase()
+  // ensure JSON bodies are forwarded as raw JSON strings
+  const contentType = (headers as any)['content-type'] || ''
+  const data = contentType.toString().includes('application/json') ? JSON.stringify(req.body) : req.body
 
       const cfg: AxiosRequestConfig = {
         url,

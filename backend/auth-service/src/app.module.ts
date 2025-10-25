@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config'
 // import { MongoMemoryServer } from 'mongodb-memory-server'
 import { AuthController } from './interface/controllers/auth.controller'
 import { UsersController } from './interface/controllers/users.controller'
+import { HealthController } from './interface/controllers/health.controller'
 import { UserSchema } from './core/domain/schemas/user.schema'
 import { MongoUserRepository } from './core/infrastructure/repositories/mongo-user.repository'
 import { InMemoryUserRepository } from './core/infrastructure/repositories/in-memory-user.repository'
@@ -44,7 +45,7 @@ if (process.env.MONGO_URI && process.env.MONGO_URI.trim().length > 0) {
 
 @Module({
 	imports,
-	controllers: [AuthController, UsersController],
+	controllers: [AuthController, UsersController, HealthController],
 	providers,
 })
 export class AppModule {}

@@ -17,7 +17,7 @@ spec:
       containers:
         - name: auth-service
           # Replace image with the actual image you build/push for auth-service
-          image: your-docker-repo/auth-service:latest
+          image: proyectodise-o2-auth-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
@@ -27,9 +27,8 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            # Optional override if you prefer to set MONGO_URI directly instead of using secrets
-            - name: MONGO_URI
-              value: ""
+            # If project-secrets contains MONGO_URI, auth-service will use it. Otherwise
+            # set MONGO_USER and MONGO_PASSWORD in the secret and the app can use them.
           livenessProbe:
             httpGet:
               path: /health
