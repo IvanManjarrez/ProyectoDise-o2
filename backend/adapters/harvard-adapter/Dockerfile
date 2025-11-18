@@ -19,7 +19,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala SOLO dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
+RUN npm i --only=production && npm cache clean --force
 
 # 3: CONSTRUCCIÓN DE LA APLICACIÓN
 FROM base AS build
@@ -30,7 +30,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala todas las dependencias (incluye TypeScript, @nestjs/cli, etc.)
-RUN npm ci
+RUN npm i
 
 # Copia TODO el código fuente
 COPY . .
