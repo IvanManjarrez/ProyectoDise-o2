@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: museum-proxy-service
+  labels:
+    app: museum-proxy-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: museum-proxy-service
+  template:
+    metadata:
+      labels:
+        app: museum-proxy-service
+    spec:
+      containers:
+        - name: museum-proxy-service
+          image: your-docker-repo/museum-proxy-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3010
+          envFrom:
+            - secretRef:
+                name: project-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3010
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3010
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

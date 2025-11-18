@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: met-adapter
+  labels:
+    app: met-adapter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: met-adapter
+  template:
+    metadata:
+      labels:
+        app: met-adapter
+    spec:
+      containers:
+        - name: met-adapter
+          image: your-docker-repo/met-adapter:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3012
+          envFrom:
+            - secretRef:
+                name: project-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3012
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3012
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"

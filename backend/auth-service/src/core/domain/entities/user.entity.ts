@@ -1,1 +1,7 @@
-// TODO: User domain entity for authentication
+export interface User {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string
+  favorites: string[]
+}
