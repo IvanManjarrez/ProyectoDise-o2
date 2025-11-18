@@ -58,13 +58,13 @@ COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 # Copia archivo de configuración de package.json (necesario para metadata)
 COPY --chown=nestjs:nodejs package*.json ./
 
-# Expone el puerto 3001 (puerto del Composition Service)
+# Expone el puerto 3002 (puerto del Composition Service)
 # NOTA: Esto es solo documentación, no abre el puerto automáticamente
-EXPOSE 3001
+EXPOSE 3002
 
 # Define variables de entorno por defecto
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=3002
 
 # Comando que ejecuta cuando el container inicia
 # dumb-init maneja señales del sistema correctamente
