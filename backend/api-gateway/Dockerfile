@@ -1,7 +1,14 @@
 FROM node:18-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm i --only=production
-COPY dist ./dist
+RUN npm install
+
+RUN npm install -D @nestjs/cli typescript
+COPY . .
+RUN npm run build
+RUN npm prune --production
+
 EXPOSE 3000
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main.js"]

@@ -34,6 +34,7 @@ async function bootstrap() {
 	SwaggerModule.setup('api/docs', app, document, {
 		customSiteTitle: 'Auth Service - API Documentation',
 		customCss: '.swagger-ui .topbar { display: none }',
+		jsonDocumentUrl: '/api/docs-json',
 	})
 	
 	const port = process.env.PORT || 3001

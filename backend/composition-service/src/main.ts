@@ -37,11 +37,13 @@ async function bootstrap() {
       .build();
     
     const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api/docs', app, swaggerDocument);
+    SwaggerModule.setup('api/docs', app, swaggerDocument, {
+      jsonDocumentUrl: '/api/docs-json',
+    });
     
     console.log('Swagger configurado en /api/docs');
 
-    const port = process.env.PORT || 3001;
+    const port = process.env.PORT || 3002;
     await app.listen(port);
 
     console.log(`Composition Service running on port ${port}`);

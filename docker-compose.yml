@@ -1,278 +1,174 @@
 # ==========================================
-# GALERÍA AR - DOCKER COMPOSE
+# AR ART GALLERY - DOCKER COMPOSE
 # ==========================================
-# Archivo de orquestación para levantar todo el sistema de microservicios
-# Incluye: Adaptador Harvard, Adaptador MET, Servicio Composition, Proxy Museos, MongoDB, Redis
+# Levanta toda la arquitectura de microservicios
+# Incluye: MongoDB, Redis, Auth, API Gateway, Composition, Museum Proxy, Adaptadores
 # 
-# Uso: docker-compose up -d
+# Uso: docker-compose up -d --build
 # Para parar: docker-compose down
+# Ver logs: docker-compose logs -f [servicio]
 
-# Versión de Docker Compose ya no es requerida en versiones modernas
-
-# ==========================================
-# SERVICIOS (CONTENEDORES)
-# ==========================================
 services:
   
   # ==========================================
   # BASE DE DATOS - MongoDB
   # ==========================================
   mongodb:
-    # Imagen oficial de MongoDB (versión 6 es estable)
     image: mongo:6
-    
-    # Nombre del contenedor (más fácil de identificar)
-    container_name: art-gallery-mongodb
-    
-    # Reiniciar automáticamente si se cae
+    container_name: ar-mongodb
     restart: unless-stopped
-    
-    # Variables de entorno para MongoDB
     environment:
-      # Usuario administrador de MongoDB
       MONGO_INITDB_ROOT_USERNAME: artgallery
       MONGO_INITDB_ROOT_PASSWORD: secure123
-      
-      # Base de datos inicial
       MONGO_INITDB_DATABASE: artgallery
-    
-    # Mapeo de puertos: host:contenedor
-    # Permite acceder desde localhost:27017
     ports:
       - "27017:27017"
-    
-    # Volumen para persistir datos (no se pierden al reiniciar)
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
-    
-    # Red interna para comunicación entre servicios
     networks:
-      - art-gallery-network
+      - ar-network
 
   # ==========================================
   # CACHÉ - Redis  
   # ==========================================
   redis:
-    # Imagen oficial de Redis (versión Alpine es más ligera)
     image: redis:7-alpine
-    
-    container_name: art-gallery-redis
+    container_name: ar-redis
     restart: unless-stopped
-    
-    # Comando personalizado para Redis con configuración
-    command: redis-server --appendonly yes --requirepass redis123
-    
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
-    
-    # Volumen para persistir caché (opcional pero recomendado)
     volumes:
       - redis_data:/data
-    
     networks:
-      - art-gallery-network
+      - ar-network
 
   # ==========================================
-  # ADAPTADOR HARVARD MICROSERVICIO
+  # ADAPTADOR HARVARD
   # ==========================================
   harvard-adapter:
-    # Usar la imagen que acabamos de construir
-    image: harvard-adapter:latest
-    
-    container_name: art-gallery-harvard
+    build: ./backend/adapters/harvard-adapter
+    container_name: ar-harvard
     restart: unless-stopped
-    
-    # Construir desde Dockerfile si no existe la imagen
-    build:
-      context: ./backend/adapters/harvard-adapter
-      dockerfile: Dockerfile
-    
-    # Variables de entorno específicas para Harvard
     environment:
-      - NODE_ENV=production
       - PORT=3013
-      - HARVARD_API_BASE_URL=https://api.harvardartmuseums.org
       - HARVARD_API_KEY=4229f68b-585d-4c60-8d4a-00adafc8719c
-      - HARVARD_API_TIMEOUT=10000
-    
     ports:
       - "3013:3013"
-    
-    # Verificación de salud para confirmar que el servicio funciona
-    healthcheck:
-      test: ["CMD", "sh", "-c", "nc -z localhost 3013"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
     networks:
-      - art-gallery-network
+      - ar-network
 
   # ==========================================
-  # ADAPTADOR MET MICROSERVICIO  
+  # ADAPTADOR MET
   # ==========================================
   met-adapter:
-    # Usa la imagen construida localmente
-    image: met-adapter:latest
-    container_name: art-gallery-met
+    build: ./backend/adapters/met-adapter
+    container_name: ar-met
     restart: unless-stopped
-    
-    # Construye la imagen desde el Dockerfile del adaptador MET
-    build:
-      context: ./backend/adapters/met-adapter
-      dockerfile: Dockerfile
-    
-    # Variables de entorno específicas para el Metropolitan Museum
     environment:
-      - NODE_ENV=production
       - PORT=3012
-      - MET_API_BASE_URL=https://collectionapi.metmuseum.org/public/collection/v1
-      - MET_API_TIMEOUT=5000
-    
-    # Mapea el puerto 3012 del contenedor al host
     ports:
       - "3012:3012"
-    
-    # Verificación de salud para monitorear el estado del servicio
-    healthcheck:
-      test: ["CMD", "sh", "-c", "nc -z localhost 3012"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
     networks:
-      - art-gallery-network
+      - ar-network
 
   # ==========================================
-  # SERVICIO PROXY DE MUSEOS
+  # MUSEUM PROXY SERVICE
   # ==========================================
   museum-proxy:
-    # Imagen del proxy con circuit breaker pattern implementado
-    image: museum-proxy:latest
-    container_name: art-gallery-proxy
+    build: ./backend/museum-proxy-service
+    container_name: ar-museum-proxy
     restart: unless-stopped
-    
-    # Construye desde el Dockerfile del servicio proxy
-    build:
-      context: ./backend/museum-proxy-service
-      dockerfile: Dockerfile
-    
-    # Configuración específica del proxy
     environment:
-      - NODE_ENV=production
       - PORT=3010
-      # URLs internas usando nombres de contenedores (no localhost)
-      # Esto permite comunicación entre contenedores en la red Docker
       - REDIS_URL=redis://redis:6379
-      - MET_API_URL=http://met-adapter:3012
-      - HARVARD_API_URL=http://harvard-adapter:3013
-    
-    # Expone el puerto del proxy al host
+      - MET_ADAPTER_URL=http://met-adapter:3012
+      - HARVARD_ADAPTER_URL=http://harvard-adapter:3013
     ports:
       - "3010:3010"
-    
-    # Dependencias: espera que Redis y adaptadores estén funcionando
-    # Esto garantiza el orden correcto de inicio de servicios
     depends_on:
-      redis:
-        condition: service_started
-      harvard-adapter:
-        condition: service_healthy
-      met-adapter:
-        condition: service_healthy
-    
-    # Monitoreo de salud del servicio proxy
-    healthcheck:
-      test: ["CMD", "sh", "-c", "nc -z localhost 3010"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
+      - redis
+      - met-adapter
+      - harvard-adapter
     networks:
-      - art-gallery-network
+      - ar-network
 
   # ==========================================
-  # SERVICIO COMPOSITION (Orquestador Principal)
+  # AUTH SERVICE
   # ==========================================
-  composition-service:
-    # Imagen del orquestador principal con patrón Composition
-    image: composition-service:latest
-    container_name: art-gallery-composition
+  auth-service:
+    build: ./backend/auth-service
+    container_name: ar-auth
     restart: unless-stopped
-    
-    # Construye desde el Dockerfile del servicio de composición
-    build:
-      context: ./backend/composition-service
-      dockerfile: Dockerfile
-    
-    # Configuración del orquestador principal
     environment:
-      - NODE_ENV=production
       - PORT=3001
-      # URLs internas para comunicación entre microservicios
-      # Utiliza nombres de contenedores para resolución DNS interna
-      - MUSEUM_PROXY_URL=http://museum-proxy:3010
-      - MONGODB_URI=mongodb://artgallery:secure123@mongodb:27017/artgallery
-      - REDIS_URL=redis://redis:6379
-    
-    # Puerto principal de la aplicación AR Art Gallery
+      - MONGO_URI=mongodb://artgallery:secure123@mongodb:27017/auth-service?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
     ports:
       - "3001:3001"
-    
-    # Dependencias críticas: espera que toda la infraestructura esté lista
-    # Esto asegura que el orquestador inicie después de sus dependencias
     depends_on:
-      mongodb:
-        condition: service_started
-      redis:
-        condition: service_started
-      museum-proxy:
-        condition: service_healthy
-    
-    # Verificación de salud del orquestador principal
-    healthcheck:
-      test: ["CMD", "sh", "-c", "nc -z localhost 3001"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
+      - mongodb
     networks:
-      - art-gallery-network
+      - ar-network
+
+  # ==========================================
+  # COMPOSITION SERVICE
+  # ==========================================
+  composition-service:
+    build: ./backend/composition-service
+    container_name: ar-composition
+    restart: unless-stopped
+    environment:
+      - PORT=3002
+      - MUSEUM_PROXY_URL=http://museum-proxy:3010
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3002:3002"
+    depends_on:
+      - redis
+      - museum-proxy
+    networks:
+      - ar-network
+
+  # ==========================================
+  # API GATEWAY
+  # ==========================================
+  api-gateway:
+    build: ./backend/api-gateway
+    container_name: ar-gateway
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - COMPOSITION_SERVICE_URL=http://composition-service:3002
+      - MUSEUM_PROXY_SERVICE_URL=http://museum-proxy:3010
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - THROTTLE_TTL=60000
+      - THROTTLE_LIMIT=10
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - composition-service
+      - museum-proxy
+    networks:
+      - ar-network
 
 # ==========================================
-# REDES (COMUNICACIÓN ENTRE CONTENEDORES)
+# REDES
 # ==========================================
 networks:
-  # Red personalizada para comunicación interna entre microservicios
-  # Permite que los contenedores se comuniquen usando nombres de servicio
-  art-gallery-network:
+  ar-network:
     driver: bridge
-    # Configuración de red personalizada con subnet específico
-    # Esto aísla el tráfico de la aplicación de otras redes Docker
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
 
 # ==========================================
-# VOLÚMENES (PERSISTENCIA DE DATOS)
+# VOLÚMENES
 # ==========================================
 volumes:
-  # Datos de MongoDB (se mantienen al reiniciar contenedores)
-  # Contiene colecciones, documentos y metadatos de la base de datos
   mongodb_data:
     driver: local
-  
-  # Configuración de MongoDB (archivos de configuración del servidor)
-  # Incluye configuraciones de réplicas, usuarios y permisos
   mongodb_config:
     driver: local
-  
-  # Datos de Redis (caché persistente para mejorar rendimiento)
-  # Almacena resultados de búsquedas y datos frecuentemente accedidos
   redis_data:
     driver: local
