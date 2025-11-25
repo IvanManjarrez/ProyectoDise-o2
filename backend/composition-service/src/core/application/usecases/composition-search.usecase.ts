@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+declare const process: any;
 import { CompositionSearchDto } from '../dto/composition-search.dto';
 import { CompositionResultDto } from '../dto/composition-result.dto';
 import { CompositionResult, SourceResult } from '../../domain/entities/composition-result.entity';
@@ -14,14 +15,17 @@ export class CompositionSearchUseCase {
     @Inject(CACHE_PORT) private readonly cache: CachePort,
   ) {}
 
-  async execute(searchDto: CompositionSearchDto): Promise<CompositionResultDto> {
+  async execute(searchDto: CompositionSearchDto, authorization?: string): Promise<CompositionResultDto> {
     const startTime = Date.now();
     const cacheKey = this.generateCacheKey(searchDto);
+    const skipCache = Boolean(authorization);
 
-    // Verificar cache
-    const cachedResult = await this.cache.get<CompositionResultDto>(cacheKey);
-    if (cachedResult) {
-      return cachedResult;
+    // Verificar cache cuando NO hay Authorization (evitar cache de respuestas personalizadas)
+    if (!skipCache) {
+      const cachedResult = await this.cache.get<CompositionResultDto>(cacheKey);
+      if (cachedResult) {
+        return cachedResult;
+      }
     }
 
     // Determinar museos a consultar
@@ -37,6 +41,27 @@ export class CompositionSearchUseCase {
     // Procesar resultados
     const { artworks, sources } = this.processResults(results, museums);
     
+    // Si se recibió Authorization, intentar obtener favoritos del usuario desde Auth Service
+    const favoritesSet = new Set<string>();
+    if (authorization) {
+      try {
+        const authUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+        const resp = await fetch(`${authUrl}/users/me`, {
+          headers: { Authorization: authorization }
+        });
+
+        if (resp.ok) {
+          const user = await resp.json();
+          const favs: string[] = user?.favorites || [];
+          favs.forEach(f => favoritesSet.add(f));
+        } else {
+          console.warn(`Auth service returned ${resp.status} when fetching /users/me`);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch favorites from auth service:', e);
+      }
+    }
+
     // Crear resultado de composición
     const searchTime = Date.now() - startTime;
     let compositionResult = CompositionResult.create(
@@ -56,9 +81,17 @@ export class CompositionSearchUseCase {
       compositionResult = compositionResult.limit(searchDto.limit);
     }
 
-    // Preparar DTO de respuesta
+    // Preparar DTO de respuesta y marcar isFavorited si corresponde
+    const artworksDto = compositionResult.artworks.map(artwork => {
+      const dto = artwork.toDto();
+      return {
+        ...dto,
+        isFavorited: favoritesSet.has(artwork.id),
+      };
+    });
+
     const resultDto: CompositionResultDto = {
-      artworks: compositionResult.artworks.map(artwork => artwork.toDto()),
+      artworks: artworksDto,
       metadata: {
         totalCount: compositionResult.totalCount,
         sources: compositionResult.sources.map(source => ({
@@ -73,8 +106,10 @@ export class CompositionSearchUseCase {
       },
     };
 
-    // Guardar en cache por 5 minutos
-    await this.cache.set(cacheKey, resultDto, 300);
+    // Guardar en cache por 5 minutos sólo si NO es una respuesta personalizada
+    if (!skipCache) {
+      await this.cache.set(cacheKey, resultDto, 300);
+    }
 
     return resultDto;
   }

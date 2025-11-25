@@ -9,24 +9,24 @@ export class MongoUserRepository {
 
   async create(user: Partial<User>): Promise<User> {
     const created: any = await this.userModel.create(user)
-    return { id: created._id.toString(), email: created.email, passwordHash: created.passwordHash, name: created.name, favorites: created.favorites || [] }
+    return { id: created._id.toString(), email: created.email, passwordHash: created.passwordHash, name: created.name, favorites: created.favorites || [], searchHistory: created.searchHistory || [] }
   }
 
   async findByEmail(email: string): Promise<User | null> {
     const u: any = await this.userModel.findOne({ email }).lean()
     if (!u) return null
-    return { id: u._id.toString(), email: u.email, passwordHash: u.passwordHash, name: u.name, favorites: u.favorites || [] }
+    return { id: u._id.toString(), email: u.email, passwordHash: u.passwordHash, name: u.name, favorites: u.favorites || [], searchHistory: u.searchHistory || [] }
   }
 
   async findById(id: string): Promise<User | null> {
     const u: any = await this.userModel.findById(id).lean()
     if (!u) return null
-    return { id: u._id.toString(), email: u.email, passwordHash: u.passwordHash, name: u.name, favorites: u.favorites || [] }
+    return { id: u._id.toString(), email: u.email, passwordHash: u.passwordHash, name: u.name, favorites: u.favorites || [], searchHistory: u.searchHistory || [] }
   }
 
   async update(id: string, update: Partial<User>): Promise<User> {
     const u: any = await this.userModel.findByIdAndUpdate(id, update, { new: true }).lean()
     if (!u) return null
-    return { id: u._id.toString(), email: u.email, passwordHash: u.passwordHash, name: u.name, favorites: u.favorites || [] }
+    return { id: u._id.toString(), email: u.email, passwordHash: u.passwordHash, name: u.name, favorites: u.favorites || [], searchHistory: u.searchHistory || [] }
   }
 }
