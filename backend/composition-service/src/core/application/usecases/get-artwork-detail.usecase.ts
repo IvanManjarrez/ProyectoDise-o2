@@ -16,13 +16,17 @@ export class GetArtworkDetailUseCase {
     @Inject(CACHE_PORT) private readonly cache: CachePort,
   ) {}
 
-  async execute(dto: GetArtworkDetailDto): Promise<any> {
+  async execute(dto: GetArtworkDetailDto, authorization?: string): Promise<any> {
     const cacheKey = `artwork:${dto.museum}:${dto.id}`;
 
-    // Verificar cache primero
-    const cachedArtwork = await this.cache.get(cacheKey);
-    if (cachedArtwork) {
-      return cachedArtwork;
+    const skipCache = Boolean(authorization);
+
+    // Verificar cache primero sólo cuando no hay Authorization (evitar respuestas personalizadas)
+    if (!skipCache) {
+      const cachedArtwork = await this.cache.get(cacheKey);
+      if (cachedArtwork) {
+        return cachedArtwork;
+      }
     }
 
     try {
@@ -35,14 +39,38 @@ export class GetArtworkDetailUseCase {
       // Obtener artwork del museo
       const artwork = await this.museumProxy.getArtworkById(dto.id, dto.museum);
       
+      // Determinar si el usuario tiene esta obra en favoritos (si se proporcionó Authorization)
+      let isFavorited = false;
+      if (authorization) {
+        try {
+          const authUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+          const resp = await fetch(`${authUrl}/users/me`, {
+            headers: { Authorization: authorization }
+          });
+
+          if (resp.ok) {
+            const user = await resp.json();
+            const favs: string[] = user?.favorites || [];
+            isFavorited = favs.includes(artwork.id);
+          } else {
+            console.warn(`Auth service returned ${resp.status} when fetching /users/me`);
+          }
+        } catch (e) {
+          console.warn('Failed to fetch favorites from auth service:', e);
+        }
+      }
+
       const result = {
         ...artwork.toDto(),
+        isFavorited,
         source: dto.museum,
         retrievedAt: new Date().toISOString(),
       };
 
-      // Guardar en cache por 1 hora
-      await this.cache.set(cacheKey, result, 3600);
+      // Guardar en cache por 1 hora sólo si no es respuesta personalizada
+      if (!skipCache) {
+        await this.cache.set(cacheKey, result, 3600);
+      }
 
       return result;
 

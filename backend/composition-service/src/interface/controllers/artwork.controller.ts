@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Query, Param, HttpException, HttpStatus, Headers } from '@nestjs/common';
 import { 
   ApiTags, 
   ApiOperation, 
@@ -111,7 +111,7 @@ export class ArtworkController {
     description: 'Error interno del servidor' 
   })
   @ApiProduces('application/json')
-  async searchArtworks(@Query() query: CompositionSearchDto) {
+  async searchArtworks(@Query() query: CompositionSearchDto, @Headers('authorization') authorization?: string) {
     try {
       // Validación básica
       if (!query.query || query.query.trim() === '') {
@@ -124,7 +124,7 @@ export class ArtworkController {
         );
       }
 
-      const result = await this.compositionSearchUseCase.execute(query);
+  const result = await this.compositionSearchUseCase.execute(query, authorization);
       
       return {
         success: true,
@@ -204,6 +204,7 @@ export class ArtworkController {
   async getArtworkDetail(
     @Param('id') id: string,
     @Query('museum') museum: 'met' | 'harvard' = 'met',
+    @Headers('authorization') authorization?: string,
   ) {
     try {
       if (!museum || (museum !== 'met' && museum !== 'harvard')) {
@@ -216,7 +217,7 @@ export class ArtworkController {
         );
       }
 
-      const result = await this.getArtworkDetailUseCase.execute({ id, museum });
+  const result = await this.getArtworkDetailUseCase.execute({ id, museum }, authorization);
       
       return {
         success: true,
