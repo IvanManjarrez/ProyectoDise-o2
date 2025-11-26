@@ -1,347 +1,235 @@
-# Galería de Arte Virtual - MVP
+# Galería de Arte Virtual
 
-Proyecto que permitirá explorar obras de arte de museos famosos. Sistema distribuido con API Composition Pattern y Proxy Pattern.
+Sistema de microservicios para explorar obras de arte de museos internacionales (Harvard Art Museums y Metropolitan Museum). Implementa patrones de API Composition y Proxy con Circuit Breaker.
 
-## Arquitectura de Microservicios
+## Arquitectura
 
-### Backend Services (Puertos de Desarrollo)
-- **Auth Service** (3004) - Autenticación JWT, gestión de usuarios estudiantes  
-- **Composition Service** (3001) - Orquestador principal, búsqueda unificada
-- **Museum Proxy Service** (3010) - Proxy con circuit breaker para APIs externas
-- **Harvard Adapter** (3013) - Integración específica con API del museo de Harvard
-- **MET Adapter** (3012) - Integración específica con API del Metropolitan Museum
+### Servicios Backend
+- **API Gateway** (3000) - Punto de entrada unificado
+- **Auth Service** (3001) - Autenticación JWT y gestión de usuarios
+- **Composition Service** (3002) - Orquestador de búsquedas multi-museo
+- **Museum Proxy Service** (3010) - Proxy resiliente con circuit breaker
+- **Harvard Adapter** (3013) - Integración con Harvard Art Museums API
+- **MET Adapter** (3012) - Integración con Metropolitan Museum API
 
 ### Infraestructura
-- **MongoDB** (27017) - Base de datos principal
-- **Redis** (6379) - Cache distribuido y sesiones
-- **Nginx** - Load balancer y reverse proxy
-
-## Documentación API (Swagger/OpenAPI)
-
-Todos los microservicios incluyen documentación interactiva completa con Swagger UI:
-
-### URLs de Documentación
-- **Harvard Adapter**: http://localhost:3013/api/docs
-- **MET Adapter**: http://localhost:3012/api/docs  
-- **Composition Service**: http://localhost:3001/api/docs
-- **Museum Proxy Service**: http://localhost:3010/api/docs
-
-### Funcionalidades Documentadas
-- **Búsqueda de obras de arte** - Endpoints de búsqueda con filtros avanzados
-- **Información detallada** - Endpoints para obtener obras específicas
-- **Metadatos de museos** - Departamentos, clasificaciones, divisiones
-- **Health checks** - Monitoreo de estado de servicios
-- **Circuit breaker** - Estados y métricas del proxy resiliente
-- **Orquestación** - Endpoints de composición multi-museo
+- **MongoDB** (27017) - Base de datos
+- **Redis** (6379) - Cache y sesiones
 
 ## Estructura del Proyecto
 
-### General
-
 ```
 backend/
-├── api-gateway/              # Puerto 3000
-├── auth-service/             # Puerto 3004
-├── composition-service/      # Puerto 3001
-├── museum-proxy-service/     # Puerto 3010
+├── api-gateway/              # Puerto 3000 - Punto de entrada
+├── auth-service/             # Puerto 3001 - Autenticación
+├── composition-service/      # Puerto 3002 - Orquestador
+├── museum-proxy-service/     # Puerto 3010 - Proxy resiliente
 ├── adapters/
-│   ├── harvard-adapter/      # Puerto 3013
-│   └── met-adapter/          # Puerto 3012
+│   ├── harvard-adapter/      # Puerto 3013 - API Harvard
+│   └── met-adapter/          # Puerto 3012 - API MET
 └── shared/
     ├── common/               # DTOs compartidos
-    └── database/             # Configuración DB
+    └── database/             # Configuración MongoDB
 
 infrastructure/
-├── docker-compose.dev.yml
-└── nginx/
-```
-### Por Microservicios:
-- Auth Service: 
-```
-src/core/
-├── domain/
-│   ├── entities/
-│   │   ├── user.entity.ts         
-│   │   └── session.entity.ts   
-│   ├── repositories/
-│   │   └── user.repository.ts 
-│   └── value-objects/
-│       ├── email.vo.ts         
-│       └── password.vo.ts  
-├── application/
-│   ├── usecases/
-│   │   ├── login.usecase.ts    
-│   │   └── register.usecase.ts 
-│   ├── dto/
-│   │   └── auth.dto.ts   
-│   └── ports/
-│       └── jwt.port.ts  
-└── infrastructure/ (carpetas creadas)
+└── docker-compose.yml        # Orquestación de servicios
 ```
 
-- API Gateway:
-```
-src/core/
-├── domain/
-│   └── entities/
-│       ├── route.entity.ts  
-│       └── rate-limit.entity.ts  
-├── application/
-│   ├── usecases/
-│   │   ├── route-request.usecase.ts 
-│   │   └── validate-rate-limit.usecase.ts 
-│   └── dto/
-│       └── gateway.dto.ts 
-└── interface/
-    └── controllers/
-        └── gateway.controller.ts 
-```
+### Clean Architecture
 
-- Harvard Adapter
+Cada microservicio sigue los principios de Clean Architecture:
+
 ```
 src/core/
 ├── domain/
-│   ├── entities/
-│   │   └── harvard-artwork.entity.ts 
-│   └── repositories/
-│       └── harvard-api.repository.ts 
+│   ├── entities/         # Modelos de negocio
+│   ├── repositories/     # Interfaces de persistencia
+│   └── value-objects/    # Objetos de valor
 ├── application/
-│   ├── usecases/
-│   │   └── search-harvard-artworks.usecase.ts 
-│   └── dto/
-│       └── harvard-api.dto.ts    
+│   ├── usecases/         # Casos de uso
+│   ├── dto/              # Objetos de transferencia
+│   └── ports/            # Interfaces de adaptadores
 ├── infrastructure/
-│   └── external/
-│       └── harvard-http.client.ts  
+│   └── external/         # Clientes HTTP externos
 └── interface/
-    └── controllers/
-        └── harvard.controller.ts 
+    └── controllers/      # Controladores REST
 ```
 
-- MET Adapter:
-```
-src/core/
-├── domain/
-│   └── entities/
-│       └── met-artwork.entity.ts 
-├── application/
-│   └── usecases/
-│       └── search-met-artworks.usecase.ts 
-└── interface/
-    └── controllers/
-        └── met.controller.ts 
-```
-
-- Museum Proxy Service:
-```
-src/core/
-├── domain/
-│   ├── entities/
-│   │   ├── user.entity.ts    
-│   │   └── session.entity.ts  
-│   ├── repositories/
-│   │   └── user.repository.ts
-│   └── value-objects/
-│       ├── email.vo.ts     
-│       └── password.vo.ts    
-├── application/
-│   ├── usecases/
-│   │   ├── login.usecase.ts   
-│   │   └── register.usecase.ts  
-│   ├── dto/
-│   │   └── auth.dto.ts    
-│   └── ports/
-│       └── jwt.port.ts   
-└── infrastructure/ (carpetas creadas)
-```
-
-- Composition Service:
-```
-src/core/
-├── domain/
-│   └── entities/
-│       ├── route.entity.ts 
-│       └── rate-limit.entity.ts   
-├── application/
-│   ├── usecases/
-│   │   ├── route-request.usecase.ts  
-│   │   └── validate-rate-limit.usecase.ts 
-│   └── dto/
-│       └── gateway.dto.ts   
-└── interface/
-    └── controllers/
-        └── gateway.controller.ts 
-```
-
-## Desarrollo
+## Inicio Rápido
 
 ### Prerrequisitos
 - Docker & Docker Compose
-- Node.js 18+ (para desarrollo individual)
 - Git
 
-## Ejecución con Docker (Recomendado)
+### Instalación
 
-### Inicio Rápido
-
-1. **Clonar el repositorio:**
 ```bash
+# Clonar repositorio
 git clone https://github.com/IvanManjarrez/ProyectoDise-o2.git
 cd ProyectoDise-o2
-```
 
-2. **Levantar todo el sistema:**
-```bash
-# Construye las imágenes y levanta todos los servicios
+# Iniciar todos los servicios
 docker-compose up -d
 
-# Ver el estado de los servicios
+# Verificar estado
 docker-compose ps
 
-# Ver logs en tiempo real
+# Ver logs
 docker-compose logs -f
-```
 
-3. **Verificar que todo funciona:**
-```bash
-# Health check de los servicios principales
-curl http://localhost:3013/api/v1/harvard/health
-curl http://localhost:3012/api/v1/met/health
-curl http://localhost:3010/api/v1/proxy/health
-
-# Búsquedas funcionales (acceso directo a adapters)
-curl "http://localhost:3013/api/v1/harvard/search?q=monet&limit=5"
-curl "http://localhost:3012/api/v1/met/search?q=monet&limit=5"
-```
-
-4. **Parar el sistema:**
-```bash
+# Detener servicios
 docker-compose down
 ```
 
-### URLs de Desarrollo (Docker)
-- **Composition Service**: http://localhost:3001 (Orquestador principal)
-- **Museum Proxy**: http://localhost:3010 (Proxy con circuit breaker)
-- **Harvard Adapter**: http://localhost:3013 (API Harvard Art Museums)
-- **MET Adapter**: http://localhost:3012 (API Metropolitan Museum)
-- **MongoDB**: http://localhost:27017 (Base de datos)
-- **Redis**: http://localhost:6379 (Cache)
+### Verificación
 
-### Endpoints de Prueba
-
-#### Harvard Adapter 
 ```bash
-# Búsqueda de obras de arte (Devuelve datos reales)
-GET http://localhost:3013/api/v1/harvard/search?q=monet&limit=10
-GET http://localhost:3013/api/v1/harvard/search?q=picasso&limit=5
+# Health checks
+curl http://localhost:3013/api/v1/harvard/health
+curl http://localhost:3012/api/v1/met/health
+curl http://localhost:3010/api/v1/proxy/health
+```
 
-# Detalle de obra específica
+## Endpoints Principales
+
+### Composition Service (Puerto 3002)
+
+**Búsqueda Unificada**
+```bash
+# Buscar en Harvard
+GET http://localhost:3002/api/v1/composition/search?query=monet&museums=harvard&limit=5
+
+# Buscar en MET
+GET http://localhost:3002/api/v1/composition/search?query=picasso&museums=met&limit=5
+
+# Buscar en ambos museos
+GET http://localhost:3002/api/v1/composition/search?query=art&museums=harvard,met&limit=10
+```
+
+**Detalle de Obra**
+```bash
+GET http://localhost:3002/api/v1/composition/artworks/331916?museum=harvard
+GET http://localhost:3002/api/v1/composition/artworks/437853?museum=met
+```
+
+### Auth Service (Puerto 3001)
+
+**Autenticación**
+```bash
+# Registro
+POST http://localhost:3001/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Usuario",
+  "email": "usuario@ejemplo.com",
+  "password": "password123"
+}
+
+# Login
+POST http://localhost:3001/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "usuario@ejemplo.com",
+  "password": "password123"
+}
+```
+
+**Favoritos**
+```bash
+# Agregar favorito
+POST http://localhost:3001/api/v1/users/:userId/favorites
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "artworkId": "harvard_331916",
+  "title": "Water Lilies",
+  "artist": "Claude Monet",
+  "museum": "harvard",
+  "imageUrl": "https://...",
+  "year": 1906
+}
+
+# Obtener favoritos
+GET http://localhost:3001/api/v1/users/:userId/favorites
+Authorization: Bearer {token}
+
+# Eliminar favorito
+DELETE http://localhost:3001/api/v1/users/:userId/favorites/:artworkId
+Authorization: Bearer {token}
+```
+
+**Historial de Búsqueda**
+```bash
+# Agregar búsqueda
+POST http://localhost:3001/api/v1/users/:userId/search-history
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "query": "monet",
+  "museum": "harvard",
+  "resultsCount": 15
+}
+
+# Obtener historial
+GET http://localhost:3001/api/v1/users/:userId/search-history
+Authorization: Bearer {token}
+
+# Limpiar historial
+DELETE http://localhost:3001/api/v1/users/:userId/search-history
+Authorization: Bearer {token}
+```
+
+### Museum Proxy (Puerto 3010)
+
+```bash
+# Búsqueda con circuit breaker
+GET http://localhost:3010/api/v1/proxy/artworks/search?query=monet&museum=harvard&limit=10
+
+# Detalle de obra
+GET http://localhost:3010/api/v1/proxy/artworks/harvard/331916
+GET http://localhost:3010/api/v1/proxy/artworks/met/437853
+```
+
+### Harvard Adapter (Puerto 3013)
+
+```bash
+# Búsqueda
+GET http://localhost:3013/api/v1/harvard/search?q=monet&limit=10
+
+# Detalle
 GET http://localhost:3013/api/v1/harvard/artwork/331916
 
-# Obtener clasificaciones disponibles
+# Clasificaciones
 GET http://localhost:3013/api/v1/harvard/classifications
 
-# Obtener culturas disponibles
+# Culturas
 GET http://localhost:3013/api/v1/harvard/cultures
-
-# Health check del servicio
-GET http://localhost:3013/api/v1/harvard/health
 ```
 
-#### MET Adapter 
-```bash
-# Búsqueda de obras de arte (Devuelve datos reales)
-GET http://localhost:3012/api/v1/met/search?q=monet&limit=10
-GET http://localhost:3012/api/v1/met/search?q=van%20gogh&limit=5
+### MET Adapter (Puerto 3012)
 
-# Detalle de objeto específico
+```bash
+# Búsqueda
+GET http://localhost:3012/api/v1/met/search?q=van%20gogh&limit=10
+
+# Detalle
 GET http://localhost:3012/api/v1/met/object/437853
 
-# Departamentos disponibles
+# Departamentos
 GET http://localhost:3012/api/v1/met/departments
-
-# Health check del servicio
-GET http://localhost:3012/api/v1/met/health
 ```
 
-#### Museum Proxy Service
-```bash
-# Health check 
-GET http://localhost:3010/api/v1/proxy/health
+## Documentación Swagger
 
-#### Composition Service
-```bash
-# Health check
-GET http://localhost:3001/api/v1/composition/health
+Cada servicio incluye documentación interactiva en:
 
-# Búsqueda unificada - Harvard
-GET http://localhost:3001/api/v1/composition/search?query=monet&museums=harvard&limit=3
-
-# Búsqueda unificada - MET
-GET http://localhost:3001/api/v1/composition/search?query=van+gogh&museums=met&limit=2
-
-# Búsqueda en múltiples museos (cuando esté implementado)
-GET http://localhost:3001/api/v1/composition/search?query=picasso&museums=harvard,met&limit=5
-```
-
-## Desarrollo Local (Sin Docker)
-
-### Configuración Manual
-
-1. **Instalar dependencias y ejecutar servicios:**
-```bash
-# Para cada microservicio
-cd backend/[service-name]
-npm install
-npm run start:dev
-```
-
-2. **Servicios de infraestructura:**
-```bash
-# MongoDB (puerto 27017)
-# Redis (puerto 6379)
-# Configurar manualmente o usar Docker solo para estos
-```
-
-- **Orden recomendado**: (Harvard + MET Adapters) → Museum Proxy → Composition
-
-### URLs de Desarrollo (Local)
-- Auth Service: http://localhost:3004 *(pendiente implementación)*
-- API Gateway: http://localhost:3000 *(pendiente implementación)*
-- Composition Service: http://localhost:3001
-- Museum Proxy: http://localhost:3010
-- Harvard Adapter: http://localhost:3013
-- MET Adapter: http://localhost:3012
-
-## Estado del Proyecto
-
-### Primera Entrega (Semana 1)
-- Se escogieron las arquitecturas que se usarán para el proyecto
-- Se creó el esqueleto base del cual partirá el desarrollo
-- Se identificaron los Microservicios junto con sus funciones y responsabilidades
-
-### Segunda Entrega (Semana 2)
-- **Harvard Adapter**: 100% funcional con API real de Harvard Art Museums
-- **MET Adapter**: 100% funcional con API del Metropolitan Museum
-- **Composition Service**: Orquestador principal implementado con patrón Composition
-- **Museum Proxy Service**: Proxy con Circuit Breaker para APIs externas
-
-### Tercera Entrega (Semana 3)
-- **Microservicios containerizados**: Dockerfiles optimizados para cada servicio
-- **Orquestación completa**: docker-compose.yml funcional con networking
-- **Comunicación entre servicios**: Containers conectados correctamente
-- **Base de datos**: MongoDB con persistencia de datos
-- **Cache distribuido**: Redis para optimización de rendimiento  
-- **APIs externas integradas**: Harvard y MET APIs funcionando con datos reales
-- **Validación individual**: Cada adapter probado y funcional
-- **Documentación API completa**: Swagger/OpenAPI implementado en todos los microservicios 
-- **Documentación Swagger completa**: OpenAPI 3.0 en todos los microservicios
-
-### Objetivos Completados
-1. **Microservicios containerizados** - 4 Dockerfiles optimizados funcionando
-2. **Orquestación completa** - docker-compose.yml levanta todo el sistema
-3. **Integración con APIs externas** - Harvard y MET APIs devolviendo datos reales  
-4. **Infraestructura de datos** - MongoDB y Redis operativos con persistencia
-5. **Networking entre containers** - Comunicación interna configurada
-6. **Validación funcional** - Health checks y endpoints probados exitosamente
-7. **Documentación API completa** - Swagger/OpenAPI implementado en todos los microservicios
+- **API Gateway**: http://localhost:3000/api/docs
+- **Auth Service**: http://localhost:3001/api/docs
+- **Composition Service**: http://localhost:3002/api/docs
+- **Museum Proxy**: http://localhost:3010/api/docs
+- **Harvard Adapter**: http://localhost:3013/api/docs
+- **MET Adapter**: http://localhost:3012/api/docs

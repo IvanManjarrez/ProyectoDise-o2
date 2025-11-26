@@ -339,12 +339,19 @@ export class HarvardHttpClient implements HarvardApiRepository {
         .filter(tag => tag && typeof tag === 'string');
     }
 
-    // Procesar imagen
+    // Procesar imagen - usar directamente lo que Harvard envía
     let imageUrl = '';
     if (data.primaryimageurl) {
+      // Harvard ya devuelve URLs válidas, usar directamente
       imageUrl = data.primaryimageurl;
     } else if (data.images && data.images.length > 0) {
-      imageUrl = data.images[0].baseimageurl || data.images[0].iiifbaseuri;
+      const firstImage = data.images[0];
+      if (firstImage.baseimageurl) {
+        imageUrl = firstImage.baseimageurl;
+      } else if (firstImage.iiifbaseuri) {
+        // IIIF Image API
+        imageUrl = `${firstImage.iiifbaseuri}/full/full/0/default.jpg`;
+      }
     }
 
     //  Procesar artista

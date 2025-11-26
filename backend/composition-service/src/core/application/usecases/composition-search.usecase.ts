@@ -52,8 +52,17 @@ export class CompositionSearchUseCase {
 
         if (resp.ok) {
           const user = await resp.json();
-          const favs: string[] = user?.favorites || [];
-          favs.forEach(f => favoritesSet.add(f));
+          // Ahora favorites es un array de objetos con artworkId
+          const favs = user?.favorites || [];
+          favs.forEach(f => {
+            if (typeof f === 'string') {
+              // Compatibilidad con favoritos viejos (solo IDs)
+              favoritesSet.add(f);
+            } else if (f && f.artworkId) {
+              // Nuevos favoritos (objetos completos)
+              favoritesSet.add(f.artworkId);
+            }
+          });
         } else {
           console.warn(`Auth service returned ${resp.status} when fetching /users/me`);
         }
