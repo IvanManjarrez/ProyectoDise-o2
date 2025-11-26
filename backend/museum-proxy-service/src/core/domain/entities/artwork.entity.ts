@@ -25,11 +25,11 @@ export class Artwork {
 
   static fromHarvard(data: any): Artwork {
     return new Artwork(
-      `harvard_${data.id}`,
+      `harvard_${data.objectId || data.id}`,
       data.title,
-      data.people?.[0]?.name || 'Unknown Artist',
+      data.artistName || data.people?.[0]?.name || 'Unknown Artist',
       'harvard',
-      data.primaryimageurl,
+      data.imageUrl || data.primaryimageurl, // Soportar ambos formatos
       data.medium,
       data.dated ? parseInt(data.dated) : undefined,
       data.dimensions

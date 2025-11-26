@@ -105,10 +105,12 @@ services:
       - PORT=3001
       - MONGO_URI=mongodb://artgallery:secure123@mongodb:27017/auth-service?authSource=admin
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - COMPOSITION_SERVICE_URL=http://composition-service:3002
     ports:
       - "3001:3001"
     depends_on:
       - mongodb
+      - composition-service
     networks:
       - ar-network
 

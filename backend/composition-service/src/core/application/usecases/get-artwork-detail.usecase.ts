@@ -50,8 +50,12 @@ export class GetArtworkDetailUseCase {
 
           if (resp.ok) {
             const user = await resp.json();
-            const favs: string[] = user?.favorites || [];
-            isFavorited = favs.includes(artwork.id);
+            const favs = user?.favorites || [];
+            // Compatibilidad con favoritos viejos (strings) y nuevos (objetos)
+            isFavorited = favs.some(f => {
+              if (typeof f === 'string') return f === artwork.id;
+              return f && f.artworkId === artwork.id;
+            });
           } else {
             console.warn(`Auth service returned ${resp.status} when fetching /users/me`);
           }
